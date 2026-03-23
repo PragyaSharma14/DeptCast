@@ -19,7 +19,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors({
-  origin: ['https://dept-cast.vercel.app', 'http://localhost:5173'], // Restrict strictly to Vercel production and local development
+  origin: function (origin, callback) {
+    // Dynamic origin matching to perfectly pass preflight for any domain
+    callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
