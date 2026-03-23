@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 app.use(cors({
   origin: ['https://dept-cast.vercel.app', 'http://localhost:5173'], // Restrict strictly to Vercel production and local development
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-organization-id']
+  credentials: true
 }));
 app.use(express.json());
 
