@@ -1,0 +1,9 @@
+{
+  "domain": "marketing",
+  "name": "Marketing Promo",
+  "structure": ["Hook", "Problem", "Solution", "CTA"],
+  "pacing": "fast",
+  "tone": "emotional",
+  "defaultDuration": 4,
+  "styleHints": "cinematic, dynamic lighting, high contrast, vibrant colors, fast motion, dramatic"
+}

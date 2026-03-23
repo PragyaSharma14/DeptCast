@@ -1,0 +1,9 @@
+{
+  "domain": "it",
+  "name": "IT Explainer",
+  "structure": ["Overview", "Architecture", "Key Feature", "Summary"],
+  "pacing": "moderate",
+  "tone": "professional",
+  "defaultDuration": 5,
+  "styleHints": "corporate, clean visuals, soft lighting, stable camera, sharp focus, modern office"
+}
