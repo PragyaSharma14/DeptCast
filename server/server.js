@@ -18,10 +18,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const allowedOrigins = ['https://dept-cast.vercel.app', 'http://localhost:5173'];
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Dynamic origin matching to perfectly pass preflight for any domain
-    callback(null, true);
+    // Highly secure origin validation
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Cross-Origin Request Blocked by Security Policy'));
+    }
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true
