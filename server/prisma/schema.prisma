@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String        @id @default(uuid())
+  name                  String
+  email                 String        @unique
+  passwordHash          String
+  currentOrganizationId String?
+  currentOrganization   Organization? @relation(fields: [currentOrganizationId], references: [id])
+  createdAt             DateTime      @default(now())
+
+  projects              Project[]
+  memberships           Membership[]
+}
+
+model Organization {
+  id                 String       @id @default(uuid())
+  name               String
+  logoUrl            String?
+  subscriptionStatus String       @default("trialing")
+  createdAt          DateTime     @default(now())
+
+  users              User[]       // users who have this as currentOrganization
+  projects           Project[]
+  memberships        Membership[]
+  invitations        Invitation[]
+}
+
+model Project {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  intent         String
+  domain         String
+  style          String
+  status         String       @default("draft")
+  finalVideoUrl  String?
+  createdAt      DateTime     @default(now())
+
+  scenes         Scene[]
+}
+
+model Scene {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  sceneNumber Int
+  description String   @db.Text
+  prompt      String   @db.Text
+  videoUrl    String?
+  status      String   @default("pending")
+  taskId      String?
+  createdAt   DateTime @default(now())
+}
+
+model Invitation {
+  id             String       @id @default(uuid())
+  email          String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           String       @default("member")
+  tokenHash      String
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           String       @default("member")
+  joinedAt       DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+}

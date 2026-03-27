@@ -2,12 +2,11 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import apiRoutes from "./routes/api.js";
-import connectDB from "./db.js";
+
 
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;

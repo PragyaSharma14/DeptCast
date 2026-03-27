@@ -1,8 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User from '../models/User.js';
-import Organization from '../models/Organization.js';
-import Membership from '../models/Membership.js';
+import prisma from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 
@@ -14,7 +12,7 @@ export const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -22,35 +20,42 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Create the User
-    const user = await User.create({
-      name,
-      email,
-      passwordHash
+    // Create the User, Organization, and Membership in a transaction?
+    // prisma supports this, but let's do sequentially to keep logic similar
+    
+    let user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash
+      }
     });
 
-    // Create default Organization for the user
-    const org = await Organization.create({
-      name: `${name}'s Workspace`
+    const org = await prisma.organization.create({
+      data: {
+        name: `${name}'s Workspace`
+      }
     });
 
-    // Create default Membership (Admin)
-    await Membership.create({
-      userId: user._id,
-      organizationId: org._id,
-      role: 'admin'
+    await prisma.membership.create({
+      data: {
+        userId: user.id,
+        organizationId: org.id,
+        role: 'admin'
+      }
     });
 
-    // Set user's current trackable org
-    user.currentOrganizationId = org._id;
-    await user.save();
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { currentOrganizationId: org.id }
+    });
 
     res.status(201).json({
-      _id: user._id,
+      _id: user.id,
       name: user.name,
       email: user.email,
-      currentOrganizationId: org._id,
-      token: generateToken(user._id)
+      currentOrganizationId: org.id,
+      token: generateToken(user.id)
     });
   } catch (err) {
     console.error(err);
@@ -62,14 +67,14 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.passwordHash))) {
       res.json({
-        _id: user._id,
+        _id: user.id,
         name: user.name,
         email: user.email,
         currentOrganizationId: user.currentOrganizationId,
-        token: generateToken(user._id)
+        token: generateToken(user.id)
       });
     } else {
       res.status(401).json({ error: 'Invalid email or password' });

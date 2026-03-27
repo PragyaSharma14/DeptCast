@@ -2,7 +2,7 @@ import { stitchVideos } from '../utils/ffmpeg.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import Project from '../models/Project.js';
+import prisma from '../db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,15 +27,21 @@ export const renderFinalVideo = async (scenes, projectId) => {
         
         // Update Project in DB
         const finalUrl = `/outputs/project-${projectId}-final.mp4`;
-        await Project.findByIdAndUpdate(projectId, { 
-            finalVideoUrl: finalUrl,
-            status: 'completed'
+        await prisma.project.update({
+            where: { id: projectId },
+            data: { 
+                finalVideoUrl: finalUrl,
+                status: 'completed'
+            }
         });
 
         return finalUrl;
     } catch(err) {
         console.error("Render service failed:", err);
-        await Project.findByIdAndUpdate(projectId, { status: 'failed' });
+        await prisma.project.update({
+            where: { id: projectId },
+            data: { status: 'failed' }
+        });
         throw err;
     }
 };

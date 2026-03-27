@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
-import Membership from '../models/Membership.js';
+import prisma from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 
@@ -12,10 +11,16 @@ export const requireAuth = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
       
-      req.user = await User.findById(decoded.id).select('-passwordHash');
-      if (!req.user) {
+      const user = await prisma.user.findUnique({
+          where: { id: decoded.id }
+      });
+
+      if (!user) {
         return res.status(401).json({ error: 'User not found' });
       }
+      
+      delete user.passwordHash;
+      req.user = { ...user, _id: user.id }; // Add _id alias for compatibility
       
       next();
     } catch (error) {
@@ -40,10 +45,15 @@ export const requireTenant = async (req, res, next) => {
 
   try {
     // Validate that the user actually belongs to this organization
-    const membership = await Membership.findOne({ 
-      userId: req.user._id, 
-      organizationId: requestedOrgId 
-    }).populate('organizationId');
+    const membership = await prisma.membership.findFirst({ 
+      where: {
+          userId: req.user.id || req.user._id, 
+          organizationId: requestedOrgId 
+      },
+      include: {
+          organization: true
+      }
+    });
 
     if (!membership) {
       return res.status(403).json({ error: 'Access denied: You do not belong to this organization' });
@@ -51,7 +61,7 @@ export const requireTenant = async (req, res, next) => {
 
     // Attach verified tenant info to the request
     req.membership = membership;
-    req.org = membership.organizationId;
+    req.org = { ...membership.organization, _id: membership.organization.id };
     
     next();
   } catch (err) {

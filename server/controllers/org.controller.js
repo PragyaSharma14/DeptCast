@@ -1,21 +1,24 @@
-import Organization from '../models/Organization.js';
-import Membership from '../models/Membership.js';
-import User from '../models/User.js';
-import Invitation from '../models/Invitation.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import prisma from '../db.js';
 
 // Get current org details (uses requireTenant middleware, so req.org is populated)
 export const getOrgDetails = async (req, res) => {
-  res.json({ organization: req.org });
+  // Map id to _id for frontend compatibility
+  res.json({ organization: { ...req.org, _id: req.org.id } });
 };
 
 // Get all orgs the user is a member of
 export const getMyOrgs = async (req, res) => {
   try {
-    const memberships = await Membership.find({ userId: req.user._id }).populate('organizationId');
+    const memberships = await prisma.membership.findMany({
+      where: { userId: req.user.id || req.user._id },
+      include: { organization: true }
+    });
+    
     const orgs = memberships.map(m => ({
-      ...m.organizationId.toObject(),
+      ...m.organization,
+      _id: m.organization.id,
       myRole: m.role
     }));
     res.json(orgs);
@@ -29,17 +32,25 @@ export const getMyOrgs = async (req, res) => {
 export const createOrg = async (req, res) => {
   const { name } = req.body;
   try {
-    const org = await Organization.create({ name });
-    await Membership.create({
-      userId: req.user._id,
-      organizationId: org._id,
-      role: 'admin'
+    const org = await prisma.organization.create({ data: { name } });
+    
+    await prisma.membership.create({
+      data: {
+        userId: req.user.id || req.user._id,
+        organizationId: org.id,
+        role: 'admin'
+      }
     });
     
-    req.user.currentOrganizationId = org._id;
-    await req.user.save();
+    await prisma.user.update({
+      where: { id: req.user.id || req.user._id },
+      data: { currentOrganizationId: org.id }
+    });
     
-    res.status(201).json(org);
+    // Ensure req.user has the updated ID for subsequent middleware if any
+    req.user.currentOrganizationId = org.id;
+    
+    res.status(201).json({ ...org, _id: org.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -49,8 +60,23 @@ export const createOrg = async (req, res) => {
 // Get all members of the tenant org
 export const getOrgMembers = async (req, res) => {
   try {
-    const members = await Membership.find({ organizationId: req.org._id }).populate('userId', 'name email');
-    res.json(members);
+    const members = await prisma.membership.findMany({
+      where: { organizationId: req.org.id || req.org._id },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    const formattedMembers = members.map(m => ({
+      ...m,
+      _id: m.id,
+      userId: {
+        ...m.user,
+        _id: m.user.id
+      }
+    }));
+
+    res.json(formattedMembers);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -63,14 +89,23 @@ export const updateMemberRole = async (req, res) => {
   const { role } = req.body;
 
   try {
-    const member = await Membership.findOne({ _id: memberId, organizationId: req.org._id });
+    const member = await prisma.membership.findFirst({
+      where: {
+        id: memberId,
+        organizationId: req.org.id || req.org._id
+      }
+    });
+    
     if (!member) {
       return res.status(404).json({ error: 'Membership not found' });
     }
 
-    member.role = role;
-    await member.save();
-    res.json(member);
+    const updatedMember = await prisma.membership.update({
+      where: { id: member.id },
+      data: { role }
+    });
+    
+    res.json({ ...updatedMember, _id: updatedMember.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -82,7 +117,12 @@ export const removeMember = async (req, res) => {
   const { memberId } = req.params;
 
   try {
-    await Membership.findOneAndDelete({ _id: memberId, organizationId: req.org._id });
+    await prisma.membership.deleteMany({
+      where: {
+        id: memberId,
+        organizationId: req.org.id || req.org._id
+      }
+    });
     res.json({ message: 'Member removed' });
   } catch (err) {
     console.error(err);
@@ -103,12 +143,14 @@ export const inviteUser = async (req, res) => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // 24h expiration
 
-    await Invitation.create({
-      email,
-      organizationId: req.org._id,
-      role: role || 'member',
-      tokenHash,
-      expiresAt
+    await prisma.invitation.create({
+      data: {
+        email,
+        organizationId: req.org.id || req.org._id,
+        role: role || 'member',
+        tokenHash,
+        expiresAt
+      }
     });
 
     // VERY IMPORTANT: MOCK EMAIL LOG FOR DEMO
