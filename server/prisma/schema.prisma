@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  admin
+  member
+  viewer
+}
+
 model User {
   id                    String        @id @default(uuid())
   name                  String
@@ -67,7 +73,7 @@ model Invitation {
   email          String
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
-  role           String       @default("member")
+  role           Role         @default(member)
   tokenHash      String
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
@@ -79,7 +85,7 @@ model Membership {
   user           User         @relation(fields: [userId], references: [id])
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
-  role           String       @default("member")
+  role           Role         @default(member)
   joinedAt       DateTime     @default(now())
 
   @@unique([userId, organizationId])

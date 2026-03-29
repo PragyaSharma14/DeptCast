@@ -35,9 +35,14 @@ export const Team = () => {
         e.preventDefault();
         setInviting(true);
         try {
-            await inviteUser(activeOrg._id, { email: inviteEmail, role: inviteRole });
+            const res = await inviteUser(activeOrg._id, { email: inviteEmail, role: inviteRole });
             setInviteEmail('');
-            alert("Invite sent! (Check server console for magic link)");
+            
+            if (res.sentViaEmail) {
+                alert(`Success! Invitation sent to ${inviteEmail} via Resend.`);
+            } else {
+                alert("Invite logged! (Check server terminal for the magic link because real email sending is disabled or failed)");
+            }
             fetchMembers();
         } catch (err) {
             alert(err.response?.data?.error || "Failed to invite");

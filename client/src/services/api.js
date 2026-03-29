@@ -36,10 +36,12 @@ export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/sc
 export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
 export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);
 export const getMyOrgs = () => api.get('/orgs').then(res => res.data);
+export const updateOrg = (orgId, data) => api.patch(`/orgs/${orgId}`, data).then(res => res.data);
 export const getOrgMembers = (orgId) => api.get(`/orgs/${orgId}/members`).then(res => res.data);
 export const inviteUser = (orgId, data) => api.post(`/orgs/${orgId}/invites`, data).then(res => res.data);
 export const updateMemberRole = (orgId, memberId, role) => api.patch(`/orgs/${orgId}/members/${memberId}`, { role }).then(res => res.data);
 export const removeMember = (orgId, memberId) => api.delete(`/orgs/${orgId}/members/${memberId}`).then(res => res.data);
+export const acceptInviteReq = (data) => api.post('/auth/accept-invite', data).then(res => res.data);
 
 export const getMediaUrl = (path) => {
     if(!path) return null;

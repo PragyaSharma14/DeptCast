@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { getMyOrgs } from '../../services/api';
+import { getMyOrgs, updateOrg } from '../../services/api';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Loader2, Save } from 'lucide-react';
@@ -32,8 +32,15 @@ export const Company = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
-        // Mock save for now since PATCH /api/orgs/:id wasn't heavily requested, but UI is there
-        setTimeout(() => setSaving(false), 800);
+        try {
+            const updatedProfile = await updateOrg(activeOrg._id, { name });
+            setActiveOrg(updatedProfile);
+            alert("Settings saved successfully!");
+        } catch (err) {
+            alert(err.response?.data?.error || "Error saving workspace settings");
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-brand" /></div>;

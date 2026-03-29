@@ -4,8 +4,15 @@ import videoRoutes from './video.routes.js';
 import authRoutes from './auth.routes.js';
 import orgRoutes from './org.routes.js';
 import { requireAuth, requireTenant, requireRole } from '../middleware/auth.js';
+import { apiLimiter, authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// Apply general API rate limiting
+router.use(apiLimiter);
+
+// Auth routes (stricter limit)
+router.use('/auth', authLimiter, authRoutes);
 
 // Health check endpoint
 router.get("/health", (req, res) => {

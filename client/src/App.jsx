@@ -4,6 +4,7 @@ import { useStore } from './store/useStore';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
+import { Invite } from './pages/Invite';
 import { NewVideoWizard } from './pages/videos/NewVideoWizard';
 import { Produce } from './pages/videos/Produce';
 import { Review } from './pages/videos/Review';
@@ -28,6 +29,7 @@ function App() {
   return (
     <Switch>
       <Route path="/login" component={Auth} />
+      <Route path="/invite" component={Invite} />
       
       {/* Protected App Shell */}
       <Route path="/.*">

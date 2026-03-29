@@ -7,8 +7,13 @@ import { renderFinalVideo } from '../services/render.service.js';
 export const generateVideo = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const project = await prisma.project.findUnique({ where: { id: projectId } });
-        if (!project) return res.status(404).json({ error: "Project not found" });
+        const project = await prisma.project.findFirst({ 
+            where: { 
+                id: projectId,
+                organizationId: req.org.id || req.org._id
+            } 
+        });
+        if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
 
         await prisma.project.update({
             where: { id: projectId },
@@ -85,10 +90,11 @@ export const regenerateScene = async (req, res) => {
         const { sceneId } = req.params;
         const { promptOverride } = req.body; // user can edit prompt
         
-        const scene = await prisma.scene.findUnique({ where: { id: sceneId } });
+        const scene = await prisma.scene.findUnique({ where: { id: sceneId }, include: { project: true } });
         if(!scene) return res.status(404).json({ error: "Scene not found" });
+        if(scene.project.organizationId !== (req.org.id || req.org._id)) return res.status(403).json({ error: "Unauthorized" });
         
-        const project = await prisma.project.findUnique({ where: { id: scene.projectId } });
+        const project = scene.project;
         const template = getTemplateByDomain(project.domain);
 
         await prisma.scene.update({

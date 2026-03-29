@@ -20,35 +20,38 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Create the User, Organization, and Membership in a transaction?
-    // prisma supports this, but let's do sequentially to keep logic similar
-    
-    let user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash
-      }
+    const [user, org] = await prisma.$transaction(async (tx) => {
+      let newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash
+        }
+      });
+
+      const newOrg = await tx.organization.create({
+        data: {
+          name: `${name}'s Workspace`
+        }
+      });
+
+      await tx.membership.create({
+        data: {
+          userId: newUser.id,
+          organizationId: newOrg.id,
+          role: 'admin'
+        }
+      });
+
+      newUser = await tx.user.update({
+        where: { id: newUser.id },
+        data: { currentOrganizationId: newOrg.id }
+      });
+      
+      return [newUser, newOrg];
     });
 
-    const org = await prisma.organization.create({
-      data: {
-        name: `${name}'s Workspace`
-      }
-    });
-
-    await prisma.membership.create({
-      data: {
-        userId: user.id,
-        organizationId: org.id,
-        role: 'admin'
-      }
-    });
-
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { currentOrganizationId: org.id }
-    });
+    console.log(`[AUDIT] User registered: ${email} (User ID: ${user.id}, Org ID: ${org.id})`);
 
     res.status(201).json({
       _id: user.id,
@@ -69,6 +72,7 @@ export const login = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.passwordHash))) {
+      console.log(`[AUDIT] User logged in: ${email}`);
       res.json({
         _id: user.id,
         name: user.name,
@@ -82,5 +86,64 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error during login' });
+  }
+};
+
+export const acceptInvite = async (req, res) => {
+  const { token, email, name, password } = req.body;
+  try {
+    const invitations = await prisma.invitation.findMany({ where: { email } });
+    if (invitations.length === 0) {
+      return res.status(404).json({ error: 'Invalid or expired invitation' });
+    }
+    
+    let validInvitation = null;
+    for (const inv of invitations) {
+      if (await bcrypt.compare(token, inv.tokenHash)) {
+         validInvitation = inv;
+         break;
+      }
+    }
+
+    if (!validInvitation || validInvitation.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'Invalid or expired invitation token' });
+    }
+    
+    const [user] = await prisma.$transaction(async (tx) => {
+      let user = await tx.user.findUnique({ where: { email } });
+      if (!user) {
+        if (!password || !name) throw new Error("Name and password required for new user");
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+        user = await tx.user.create({ data: { name, email, passwordHash, currentOrganizationId: validInvitation.organizationId } });
+      } else {
+        user = await tx.user.update({ where: { id: user.id }, data: { currentOrganizationId: validInvitation.organizationId }});
+      }
+
+      await tx.membership.create({
+        data: {
+          userId: user.id,
+          organizationId: validInvitation.organizationId,
+          role: validInvitation.role
+        }
+      });
+      
+      await tx.invitation.delete({ where: { id: validInvitation.id } });
+      return [user];
+    });
+
+    console.log(`[AUDIT] Invitation accepted: ${email} for Org ID: ${validInvitation.organizationId}`);
+
+    res.json({
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        currentOrganizationId: user.currentOrganizationId,
+        token: generateToken(user.id)
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Server error accepting invite' });
   }
 };

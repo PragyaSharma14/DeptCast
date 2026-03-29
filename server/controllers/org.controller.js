@@ -1,6 +1,15 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
+
+if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_placeholder_key') {
+  console.log(`[INIT] Resend initialized with key: ${process.env.RESEND_API_KEY.substring(0, 5)}...`);
+} else {
+  console.log(`[INIT] Resend initialized with MOCK key. Real emails will NOT be sent.`);
+}
 
 // Get current org details (uses requireTenant middleware, so req.org is populated)
 export const getOrgDetails = async (req, res) => {
@@ -50,10 +59,33 @@ export const createOrg = async (req, res) => {
     // Ensure req.user has the updated ID for subsequent middleware if any
     req.user.currentOrganizationId = org.id;
     
+    console.log(`[AUDIT] Organization created: ${name} (ID: ${org.id}) by User: ${req.user.id || req.user._id}`);
+    
     res.status(201).json({ ...org, _id: org.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const updateOrg = async (req, res) => {
+  const { name, logoUrl } = req.body;
+  
+  try {
+    const updatedOrg = await prisma.organization.update({
+      where: { id: req.org.id || req.org._id },
+      data: { 
+        ...(name && { name }),
+        ...(logoUrl && { logoUrl })
+      }
+    });
+
+    console.log(`[AUDIT] Organization updated: ${req.org.id || req.org._id} (Changes: ${name ? 'name ' : ''}${logoUrl ? 'logo' : ''})`);
+
+    res.json({ ...updatedOrg, _id: updatedOrg.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error updating organization' });
   }
 };
 
@@ -105,6 +137,8 @@ export const updateMemberRole = async (req, res) => {
       data: { role }
     });
     
+    console.log(`[AUDIT] Member role updated: Member ID ${memberId} in Org ${req.org.id || req.org._id} to Role: ${role}`);
+    
     res.json({ ...updatedMember, _id: updatedMember.id });
   } catch (err) {
     console.error(err);
@@ -117,12 +151,28 @@ export const removeMember = async (req, res) => {
   const { memberId } = req.params;
 
   try {
-    await prisma.membership.deleteMany({
-      where: {
-        id: memberId,
-        organizationId: req.org.id || req.org._id
-      }
+    const membership = await prisma.membership.findFirst({
+        where: { id: memberId, organizationId: req.org.id || req.org._id }
     });
+    
+    if(!membership) return res.status(404).json({ error: "Membership not found" });
+
+    // Transaction to safely delete and cleanup
+    await prisma.$transaction(async (tx) => {
+        await tx.membership.delete({ where: { id: membership.id } });
+        
+        // If the user currently has this org set as active, clear it
+        const user = await tx.user.findUnique({ where: { id: membership.userId } });
+        if(user && user.currentOrganizationId === membership.organizationId) {
+            await tx.user.update({
+                where: { id: user.id },
+                data: { currentOrganizationId: null }
+            });
+        }
+    });
+    
+    console.log(`[AUDIT] User ${membership.userId} removed from Org ${membership.organizationId} by admin`);
+
     res.json({ message: 'Member removed' });
   } catch (err) {
     console.error(err);
@@ -153,14 +203,46 @@ export const inviteUser = async (req, res) => {
       }
     });
 
-    // VERY IMPORTANT: MOCK EMAIL LOG FOR DEMO
-    console.log(`\n\n=== 📧 EMAIL SENT TO ${email} ===\n`);
-    console.log(`You have been invited to join ${req.org.name}.`);
-    console.log(`Role: ${role}`);
-    console.log(`Join Link: http://localhost:5173/invite?token=${rawToken}&email=${email}`);
-    console.log(`\n===================================\n\n`);
+    const inviteUrl = `http://localhost:5173/invite?token=${rawToken}&email=${email}`;
 
-    res.status(201).json({ message: 'Invite sent' });
+    let sentViaEmail = false;
+    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_placeholder_key') {
+      try {
+        const { error } = await resend.emails.send({
+          from: 'onboarding@resend.dev',
+          to: email,
+          subject: `Invitation to join ${req.org.name}`,
+          html: `
+            <h2>You've been invited!</h2>
+            <p>You have been invited to join the workspace <strong>${req.org.name}</strong> as a <strong>${role}</strong>.</p>
+            <p><a href="${inviteUrl}" style="padding: 8px 16px; background-color: #1a1a1a; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Accept Invitation</a></p>
+          `
+        });
+        
+        if (error) {
+          console.error("Resend Error Object:", error);
+        } else {
+          sentViaEmail = true;
+        }
+      } catch (err) {
+        console.error("Resend Exception:", err);
+      }
+    } 
+    
+    if (!sentViaEmail) {
+      console.log(`\n\n=== 📧 MOCK EMAIL LOG ===\n`);
+      console.log(`To: ${email}`);
+      console.log(`Workspace: ${req.org.name}`);
+      console.log(`Role: ${role}`);
+      console.log(`Join Link: ${inviteUrl}`);
+      console.log(`\n=========================\n\n`);
+    }
+
+    res.status(201).json({ 
+      message: 'Invite processed', 
+      sentViaEmail,
+      email 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
