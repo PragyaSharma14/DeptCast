@@ -15,7 +15,12 @@ export const generateVideo = async (req, res) => {
         });
         if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
 
-        await prisma.project.update({
+        // Guard against duplicate generation jobs
+        if (project.status === 'generating' || project.status === 'pending') {
+            return res.status(400).json({ error: "Generation is already in progress for this project." });
+        }
+
+        const updatedProject = await prisma.project.update({
             where: { id: projectId },
             data: { status: 'generating' }
         });
@@ -27,12 +32,23 @@ export const generateVideo = async (req, res) => {
         });
         const template = getTemplateByDomain(project.domain);
         
-        // This process takes time, so we should respond right away and process in background
-        res.status(202).json({ message: "Video generation started", project: { ...project, _id: project.id } });
+        // Respond with updated status to trigger frontend polling immediately
+        res.status(202).json({ 
+            message: "Video generation started", 
+            project: { ...updatedProject, _id: updatedProject.id } 
+        });
 
         // Background Processing
         (async () => {
             try {
+                const dimensionMap = {
+                    "16:9": "1280:720",
+                    "9:16": "720:1280",
+                    "1:1": "720:720",
+                    "4:3": "960:720"
+                };
+                const videoRes = dimensionMap[project.dimension] || "1280:720";
+
                 // 1. Generate video segments sequentially to avoid API limits
                 const completedScenes = [];
                 for (const scene of scenes) {
@@ -45,7 +61,7 @@ export const generateVideo = async (req, res) => {
                     console.log(`Generating Video for Scene ${scene.sceneNumber}: ${finalPrompt}`);
                     
                     try {
-                        const videoUrl = await generateVideoAsync(finalPrompt, template.defaultDuration, "1280:720");
+                        const videoUrl = await generateVideoAsync(finalPrompt, template.defaultDuration, videoRes);
                         console.log(`Scene ${scene.sceneNumber} Generated: ${videoUrl}`);
                         
                         const updatedScene = await prisma.scene.update({
@@ -96,6 +112,10 @@ export const regenerateScene = async (req, res) => {
         
         const project = scene.project;
         const template = getTemplateByDomain(project.domain);
+
+        if (scene.status === 'generating') {
+            return res.status(400).json({ error: "This scene is already being generated." });
+        }
 
         await prisma.scene.update({
             where: { id: sceneId },

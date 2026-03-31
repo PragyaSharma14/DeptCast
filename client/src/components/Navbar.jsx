@@ -20,13 +20,11 @@ export const Navbar = () => {
       <div className="mx-auto flex h-16 w-full items-center justify-end px-4 sm:px-6 lg:px-8">
 
         <div className="flex items-center gap-4 relative">
-          <Link href="/videos/new">
-            <a className="hidden md:block">
+          <Link href="/videos/new" className="hidden md:block">
               <Button size="sm" variant="secondary" className="gap-2">
                 <PlusCircle className="h-4 w-4" />
                 New Video
               </Button>
-            </a>
           </Link>
           <div className="h-8 w-[1px] bg-white/10 mx-2 hidden md:block"></div>
           
@@ -44,10 +42,8 @@ export const Navbar = () => {
                 <p className="text-sm font-medium text-white truncate">{user?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
-              <Link href="/settings/company">
-                <a className="px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              <Link href="/settings/company" className="px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                   <Settings size={16} /> Workspace Settings
-                </a>
               </Link>
               <button 
                 onClick={handleLogout}

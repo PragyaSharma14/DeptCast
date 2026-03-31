@@ -39,14 +39,10 @@ export const NewVideoWizard = () => {
   const handleGenerate = async () => {
     if (!config.prompt.trim()) return;
     
-    // DeptCast logic: Compile configurations into a monolithic "Super Prompt" 
-    // to preserve existing backend logic which expects a single string.
-    const superPrompt = `[Dept: ${config.department}] [Avatar: ${config.avatar}] [Voice: ${config.voice}] [Ratio: ${config.dimension}] ${config.prompt}`;
-    
     setLoading(true);
     // Move to Produce state (loading/animation page)
     // We will save temp state to localstorage for Produce page to pick up
-    localStorage.setItem('deptcast_pending_prompt', superPrompt);
+    localStorage.setItem('deptcast_pending_config', JSON.stringify(config));
     setLocation('/videos/produce/new');
   };
 

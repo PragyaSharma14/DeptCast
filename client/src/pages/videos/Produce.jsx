@@ -25,14 +25,15 @@ export const Produce = () => {
 
     const generate = async () => {
       try {
-        const prompt = localStorage.getItem('deptcast_pending_prompt');
-        if (!prompt) throw new Error("No configuration found. Please start over.");
+        const configStr = localStorage.getItem('deptcast_pending_config');
+        if (!configStr) throw new Error("No configuration found. Please start over.");
         
+        const config = JSON.parse(configStr);
         // This leverages the existing backend logic cleanly
-        const result = await createProject(prompt);
+        const result = await createProject(config);
         
         // Clear temp storage
-        localStorage.removeItem('deptcast_pending_prompt');
+        localStorage.removeItem('deptcast_pending_config');
         
         // Jump to review step with the new project ID
         // The project object from createProject typically contains an _id

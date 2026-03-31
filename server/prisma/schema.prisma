@@ -48,6 +48,9 @@ model Project {
   intent         String
   domain         String
   style          String
+  avatar         String?
+  voice          String?
+  dimension      String?
   status         String       @default("draft")
   finalVideoUrl  String?
   createdAt      DateTime     @default(now())

@@ -28,7 +28,7 @@ api.interceptors.request.use((config) => {
 
 export const getProjects = () => api.get('/projects').then(res => res.data);
 export const getProjectDetails = (id) => api.get(`/projects/${id}`).then(res => res.data);
-export const createProject = (prompt) => api.post('/projects', { prompt }).then(res => res.data);
+export const createProject = (data) => api.post('/projects', data).then(res => res.data);
 export const generateVideo = (projectId) => api.post(`/videos/project/${projectId}/generate`).then(res => res.data);
 export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/scene/${sceneId}/regenerate`, { promptOverride }).then(res => res.data);
 
