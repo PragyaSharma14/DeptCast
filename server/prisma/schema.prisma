@@ -51,6 +51,7 @@ model Project {
   avatar         String?
   voice          String?
   dimension      String?
+  targetDuration Int          @default(8)
   status         String       @default("draft")
   finalVideoUrl  String?
   createdAt      DateTime     @default(now())

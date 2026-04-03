@@ -31,10 +31,10 @@ Current Constraints:
 - Avatar Concept: {avatar}
 - Voice Tone: {voice}
 - Video Dimension / Framing: {dimension}
-- Required Video Engine: Google Veo 3.1 (generate high visual fidelity cinematic shorts)
+- Required Video Engine: OpenAI Sora (generate high visual fidelity cinematic videos)
 
 Task: Take the User's core idea and write a structured list of scenes. 
-- Each scene must have a `sceneNumber` (int), `description` (narrative context), and a `prompt` (the literal cinematic prompt that will be sent to the Google Veo 3.1 AI generator).
+- Each scene must have a `sceneNumber` (int), `description` (narrative context), and a `prompt` (the literal cinematic prompt that will be sent to the OpenAI Sora AI generator).
 - Make sure the cinematic `prompt` is descriptive enough to define lighting, camera movement, and clearly includes the avatar traits. Use terms like '{dimension} aspect ratio composition'.
 - Output ONLY valid JSON containing an array of objects.
 """

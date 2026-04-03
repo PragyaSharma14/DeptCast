@@ -5,7 +5,7 @@ import { generateScenes } from '../services/scene.service.js';
 
 export const createProject = async (req, res) => {
     try {
-        const { prompt, department, avatar, voice, dimension } = req.body;
+        const { prompt, department, avatar, voice, dimension, targetDuration } = req.body;
         if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
         // Load Template based on department to get style hints
@@ -22,6 +22,7 @@ export const createProject = async (req, res) => {
                 avatar: avatar,
                 voice: voice,
                 dimension: dimension,
+                targetDuration: targetDuration || 8,
                 status: 'draft'
             }
         });

@@ -8,18 +8,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const renderFinalVideo = async (scenes, projectId) => {
-    // scenes is expected to be an array of Objects containing truthy videoUrl
-    const videoUrls = scenes.map(s => s.videoUrl).filter(url => url);
-    if(videoUrls.length === 0) {
-        throw new Error("No video segments found to render.");
-    }
-    
     // Create output folder in server/public/outputs for static serving
     const publicDir = path.join(__dirname, '..', 'public');
     const outputDir = path.join(publicDir, 'outputs');
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
 
+    const videoUrls = scenes.map(s => s.videoUrl).filter(url => url).map(url => {
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        // Strip leading slash before path.join to ensure correct joining on Windows
+        return path.join(publicDir, url.replace(/^\//, ''));
+    });
+
+    if(videoUrls.length === 0) {
+        throw new Error("No video segments found to render.");
+    }
+    
     const outputPath = path.join(outputDir, `project-${projectId}-final.mp4`);
     
     try {

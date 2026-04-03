@@ -25,6 +25,7 @@ export const NewVideoWizard = () => {
     avatar: 'alex',
     voice: 'v_american_m',
     dimension: '16:9',
+    targetDuration: 8,
     prompt: ''
   });
 
@@ -119,10 +120,32 @@ export const NewVideoWizard = () => {
               />
             </div>
 
-            {/* Source Content / Prompt */}
+            {/* Duration */}
             <div className="pt-6 border-t border-white/5">
               <div className="flex items-center gap-2 text-brand mb-6">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand/20 text-xs font-bold">4</span>
+                <h2 className="text-xl font-heading font-bold text-white">Target Duration</h2>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400 mb-3">Choose the continuous playback length for your generated master video.</p>
+                <select 
+                  value={config.targetDuration}
+                  onChange={(e) => setConfig({ ...config, targetDuration: parseInt(e.target.value) })}
+                  className="w-full md:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                >
+                  <option value={8}>8 Seconds (Base Clip)</option>
+                  <option value={15}>15 Seconds (Base + 1 Extension)</option>
+                  <option value={22}>22 Seconds (Base + 2 Extensions)</option>
+                  <option value={29}>29 Seconds (Base + 3 Extensions)</option>
+                </select>
+                <p className="text-xs text-brand/60 mt-2">Note: Longer durations require multiple API extension calls, charging more credits.</p>
+              </div>
+            </div>
+
+            {/* Source Content / Prompt */}
+            <div className="pt-6 border-t border-white/5">
+              <div className="flex items-center gap-2 text-brand mb-6">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand/20 text-xs font-bold">5</span>
                 <h2 className="text-xl font-heading font-bold text-white">Source Script or Idea</h2>
               </div>
               <div>

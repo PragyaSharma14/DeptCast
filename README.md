@@ -1,6 +1,6 @@
 # Video-AI Platform
 
-A complete, scalable, and modular AI video generation platform. The system takes user intent via a beautiful web interface, orchestrates a multi-agent AI swarm (Director & Critic) to write structured cinematic scenes, and generates the final video clips asynchronously via Google Gemini Veo APIs.
+A complete, scalable, and modular AI video generation platform. The system takes user intent via a beautiful web interface, orchestrates a multi-agent AI swarm (Director & Critic) to write structured cinematic scenes, and generates the final video clips asynchronously via OpenAI Sora APIs.
 
 ## 🏗️ Architecture Overview
 
@@ -16,17 +16,17 @@ The system is highly decoupled and consists of three main local services working
   - Receives the frontend requests.
   - Manages database state (Projects, Scenes, Users) using **Prisma** on **MySQL**.
   - Triggers the Python AutoGen microservice.
-  - Orchestrates asynchronous LRO polling to the Google Gemini Veo API to track long-running video rendering tasks.
+  - Orchestrates asynchronous polling to the OpenAI Sora API.
 
 ### 3. AutoGen Python Microservice (AI Swarm)
 - **Tech Stack:** Python, FastAPI (`uvicorn`), PyAutoGen, Groq Llama 3.
 - **Role:** Handles the complex reasoning required to write cinematic prompts.
-  - **Director Agent:** Takes the user parameters and writes a structured array of detailed cinematic scenes tailored specifically to Google Veo constraints.
+  - **Director Agent:** Takes the user parameters and writes a structured array of detailed cinematic scenes tailored specifically to OpenAI Sora constraints.
   - **Critic Agent:** An adversarial agent that reviews the Director's output for formatting errors, missing constraints, and strict JSON compliance, forcing revisions if necessary.
   - **UserProxy Agent:** Manages the group chat loop between the agents and returns the final JSON to the Node.js server.
 
 ### 4. External APIs
-- **Google Gemini Veo 3.1:** Renders the cinematic text prompts into high-quality MP4 videos.
+- **OpenAI Sora:** Renders the cinematic text prompts into high-quality MP4 videos.
 - **Groq API:** Powers the AutoGen agent swarm with ultra-fast Llama 3 models.
 
 ---
@@ -39,7 +39,7 @@ To run the application locally, you must run all three services simultaneously. 
 Ensure you have the following keys in your `server/.env` file:
 ```env
 DATABASE_URL="mysql://user:password@localhost:3306/video_ai"
-GEMINI_API_KEY="your_gemini_api_key_here"
+OPENAI_API_KEY="your_openai_api_key_here"
 GROQ_API_KEY="your_groq_key_here"
 PORT=5000
 ```
@@ -82,7 +82,6 @@ python -m venv venv
 
 # 4. Install requirements 
 pip install -r requirements.txt
-# (Make sure pyautogen, fastapi, uvicorn, python-dotenv, groq are installed)
 
 # 5. Run the FastAPI server
 uvicorn main:app --port 8000 --host 0.0.0.0 --reload
@@ -112,5 +111,5 @@ npm run dev
 1. From Terminal 3 (React), you submit a Video Request.
 2. Terminal 1 (Node.js) saves a Draft Project to MySQL, then sends the prompt to Terminal 2 (Python).
 3. Terminal 2 spins up the Groq-powered Agent Swarm to argue and refine the script, returning valid JSON to Node.js.
-4. Terminal 1 saves the Scenes to MySQL, dispatches generation jobs to Google Gemini Veo API, and polls the LRO endpoints 10 seconds at a time until completed.
+4. Terminal 1 saves the Scenes to MySQL, dispatches generation jobs to OpenAI Sora API, and polls the status until completed.
 5. Terminal 3 displays the final videos as they complete!

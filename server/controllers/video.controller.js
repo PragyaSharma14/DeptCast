@@ -1,7 +1,7 @@
 import prisma from '../db.js';
 import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
-import { generateVideoAsync } from '../services/veo.service.js';
+import { generateVideoOpenAIAsync } from '../services/openai.service.js';
 import { renderFinalVideo } from '../services/render.service.js';
 
 export const generateVideo = async (req, res) => {
@@ -34,66 +34,81 @@ export const generateVideo = async (req, res) => {
         
         // Respond with updated status to trigger frontend polling immediately
         res.status(202).json({ 
-            message: "Video generation started", 
+            message: "Video generation started via OpenAI", 
             project: { ...updatedProject, _id: updatedProject.id } 
         });
 
         // Background Processing
         (async () => {
             try {
+                // OpenAI often accepts standard strings for resolutions or aspect ratios
                 const dimensionMap = {
-                    "16:9": "1280:720",
-                    "9:16": "720:1280",
-                    "1:1": "720:720",
-                    "4:3": "960:720"
+                    "16:9": "1280x720",
+                    "9:16": "720x1280",
+                    "1:1": "720x720",
+                    "4:3": "960x720"
                 };
-                const videoRes = dimensionMap[project.dimension] || "1280:720";
+                const videoRes = dimensionMap[project.dimension] || "1280x720";
 
-                // 1. Generate video segments sequentially to avoid API limits
-                const completedScenes = [];
-                for (const scene of scenes) {
-                    await prisma.scene.update({
-                        where: { id: scene.id },
-                        data: { status: 'generating' }
-                    });
-                    
-                    const finalPrompt = buildCinematicPrompt(scene.prompt, { tone: project.style }, template);
-                    console.log(`Generating Video for Scene ${scene.sceneNumber}: ${finalPrompt}`);
-                    
-                    try {
-                        const videoUrl = await generateVideoAsync(finalPrompt, template.defaultDuration, videoRes);
-                        console.log(`Scene ${scene.sceneNumber} Generated: ${videoUrl}`);
-                        
-                        const updatedScene = await prisma.scene.update({
-                            where: { id: scene.id },
-                            data: { videoUrl, status: 'completed' }
-                        });
-                        
-                        completedScenes.push({ ...updatedScene, _id: updatedScene.id });
-                    } catch (err) {
-                        console.error(`Failed to generate Scene ${scene.sceneNumber}:`, err);
-                        await prisma.scene.update({
-                            where: { id: scene.id },
-                            data: { status: 'failed' }
-                        });
-                        throw err; // Stop the pipeline if a scene fails
-                    }
+                // 1. Synthesize Master Shot using AutoGen Cinematographer
+                console.log("Synthesizing Master Continuous Shot via OpenAI Sora optimization...");
+                
+                // Update scenes to generating
+                await prisma.scene.updateMany({
+                    where: { projectId },
+                    data: { status: 'generating' }
+                });
+
+                const autogenRes = await fetch('http://localhost:8000/generate-master-shot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        scenes: scenes.map(s => ({ sceneNumber: s.sceneNumber, description: s.description })),
+                        dimension: project.dimension || "16:9",
+                        avatar: project.avatar || "standard"
+                    })
+                });
+
+                if (!autogenRes.ok) {
+                    throw new Error(`AutoGen Master Shot synthesis failed: ${await autogenRes.text()}`);
                 }
 
-                // 2. Render final video using FFmpeg
-                console.log("Starting final render for project:", projectId);
-                const finalUrl = await renderFinalVideo(completedScenes, projectId);
+                const autogenData = await autogenRes.json();
+                const masterPrompt = autogenData.master_prompt;
+                console.log(`Generated Master Prompt for OpenAI: ${masterPrompt}`);
+
+                // 2. Call OpenAI Ora - Single Contiguous Generation
+                const targetLen = project.targetDuration || 5; 
+                const videoUrl = await generateVideoOpenAIAsync(masterPrompt, targetLen, videoRes);
+                console.log(`OpenAI Sora Master Video Generated: ${videoUrl}`);
+
+                // 3. Mark all narrative scenes as "completed"
+                const completedScenes = await prisma.$transaction(
+                    scenes.map(scene => prisma.scene.update({
+                         where: { id: scene.id },
+                         data: { status: 'completed', videoUrl: videoUrl }
+                    }))
+                );
                 
-                console.log(`Project ${projectId} completely finished! URL: ${finalUrl}`);
-                // project status is updated in renderFinalVideo
+                // 4. Update project with final single video URL
+                await prisma.project.update({
+                    where: { id: projectId },
+                    data: { 
+                        status: 'completed',
+                        finalVideoUrl: videoUrl 
+                    }
+                });
+
+                console.log(`Project ${projectId} completely finished using OpenAI Sora Master Shot! URL: ${videoUrl}`);
             } catch (err) {
-                console.error("Background Video Generation Failed for project", projectId, err);
+                console.error("Background OpenAI Video Generation Failed for project", projectId, err);
                 await prisma.project.update({
                     where: { id: projectId },
                     data: { status: 'failed' }
                 });
             }
         })();
+
 
     } catch (error) {
         console.error("Generate Video Error:", error);
@@ -127,7 +142,7 @@ export const regenerateScene = async (req, res) => {
         (async () => {
             try {
                 const finalPrompt = buildCinematicPrompt(promptOverride || scene.prompt, { tone: project.style }, template);
-                const videoUrl = await generateVideoAsync(finalPrompt, template.defaultDuration, "1280:720");
+                const videoUrl = await generateVideoOpenAIAsync(finalPrompt, template.defaultDuration || 5, "1280x720");
                 await prisma.scene.update({
                     where: { id: sceneId },
                     data: { videoUrl, status: 'completed' }
