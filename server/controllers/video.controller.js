@@ -82,13 +82,11 @@ export const generateVideo = async (req, res) => {
                 const videoUrl = await generateVideoOpenAIAsync(masterPrompt, targetLen, videoRes);
                 console.log(`OpenAI Sora Master Video Generated: ${videoUrl}`);
 
-                // 3. Mark all narrative scenes as "completed"
-                const completedScenes = await prisma.$transaction(
-                    scenes.map(scene => prisma.scene.update({
-                         where: { id: scene.id },
-                         data: { status: 'completed', videoUrl: videoUrl }
-                    }))
-                );
+                // 3. Mark all narrative scenes as "completed" in status only
+                await prisma.scene.updateMany({
+                     where: { projectId },
+                     data: { status: 'completed' }
+                });
                 
                 // 4. Update project with final single video URL
                 await prisma.project.update({
@@ -143,9 +141,17 @@ export const regenerateScene = async (req, res) => {
             try {
                 const finalPrompt = buildCinematicPrompt(promptOverride || scene.prompt, { tone: project.style }, template);
                 const videoUrl = await generateVideoOpenAIAsync(finalPrompt, template.defaultDuration || 5, "1280x720");
+                
+                // For Sora, a "scene regeneration" updates the entire project's shot if requested
+                // or we update the scene status. 
                 await prisma.scene.update({
                     where: { id: sceneId },
-                    data: { videoUrl, status: 'completed' }
+                    data: { status: 'completed' }
+                });
+
+                await prisma.project.update({
+                    where: { id: project.id },
+                    data: { finalVideoUrl: videoUrl }
                 });
 
                 // We don't auto stitch here, user can trigger "re-render" separately if desired

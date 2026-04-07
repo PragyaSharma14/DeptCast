@@ -66,29 +66,8 @@ export const generateVideoOpenAIAsync = async (prompt, targetDuration = 5, resol
             throw new Error("OpenAI Sora generation timed out or failed to provide a URL.");
         }
 
-        console.log(`[OpenAI Sora] Download started: ${finalVideoUrl}`);
-
-        // Download and Save Locally
-        const videoRes = await fetch(finalVideoUrl);
-        if (!videoRes.ok) throw new Error(`Failed to download video from OpenAI. Status: ${videoRes.status}`);
-        
-        const arrayBuffer = await videoRes.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        const publicDir = path.join(__dirname, '..', 'public');
-        const scenesDir = path.join(publicDir, 'scenes');
-        
-        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
-        if (!fs.existsSync(scenesDir)) fs.mkdirSync(scenesDir);
-        
-        const fileName = `sora-${Date.now()}.mp4`;
-        const filePath = path.join(scenesDir, fileName);
-        
-        fs.writeFileSync(filePath, buffer);
-        console.log(`[OpenAI Sora] Saved locally: ${fileName}`);
-        
-        return `/scenes/${fileName}`;
-
+        console.log(`[OpenAI Sora] Video generation complete: ${finalVideoUrl}`);
+        return finalVideoUrl;
     } catch (error) {
         console.error("[OpenAI Sora] Error:", error.message);
         throw error;

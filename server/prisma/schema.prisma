@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -66,9 +66,7 @@ model Scene {
   sceneNumber Int
   description String   @db.Text
   prompt      String   @db.Text
-  videoUrl    String?
   status      String   @default("pending")
-  taskId      String?
   createdAt   DateTime @default(now())
 }
 
