@@ -1,0 +1,1 @@
+TypeError: openai.videos.createAndPoll is not a function

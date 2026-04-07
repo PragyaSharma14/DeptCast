@@ -3,9 +3,8 @@ import { cn } from '../../lib/utils';
 import { Smartphone, Monitor } from 'lucide-react';
 
 const DIMENSIONS = [
-  { id: '16:9', label: 'Landscape', ratio: '16:9', desc: 'YouTube, Presentations', icon: Monitor },
-  { id: '9:16', label: 'Portrait', ratio: '9:16', desc: 'TikTok, Reels, Shorts', icon: Smartphone },
-  { id: '1:1', label: 'Square', ratio: '1:1', desc: 'Instagram, LinkedIn', icon: Monitor },
+  { id: '16:9', label: 'Landscape', ratio: '16:9', desc: 'YouTube, Presentations, TV', icon: Monitor },
+  { id: '9:16', label: 'Portrait', ratio: '9:16', desc: 'TikTok, Reels, Shorts', icon: Smartphone }
 ];
 
 export const DimensionSelector = ({ selectedId, onSelect }) => {

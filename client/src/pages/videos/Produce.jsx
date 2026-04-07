@@ -31,14 +31,23 @@ export const Produce = () => {
         const config = JSON.parse(configStr);
         // This leverages the existing backend logic cleanly
         const result = await createProject(config);
-        
-        // Clear temp storage
-        localStorage.removeItem('deptcast_pending_config');
-        
-        // Jump to review step with the new project ID
-        // The project object from createProject typically contains an _id
-        if (result && result.project && result.project._id) {
-            setLocation(`/videos/review/${result.project._id}`);
+        const projectId = result.project?._id || result.project?.id;
+
+        if (projectId) {
+            // PRODUCTION LEVEL: Automatically trigger the Sora generation so the user doesn't have to manually click "Compile"
+            try {
+                // We import and use generateVideo from api.js (it was already imported but check name)
+                const { generateVideo: triggerGeneration } = await import('../../services/api');
+                await triggerGeneration(projectId);
+            } catch (genErr) {
+                console.warn("Auto-generation trigger failed, user can still start it manually from the detail page:", genErr);
+            }
+
+            // Clear temp storage
+            localStorage.removeItem('deptcast_pending_config');
+            
+            // Go straight to the Video Detail/Player page
+            setLocation(`/videos/${projectId}`);
         } else {
             throw new Error("Invalid response from server");
         }

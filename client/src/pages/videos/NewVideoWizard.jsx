@@ -133,12 +133,11 @@ export const NewVideoWizard = () => {
                   onChange={(e) => setConfig({ ...config, targetDuration: parseInt(e.target.value) })}
                   className="w-full md:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                 >
-                  <option value={8}>8 Seconds (Base Clip)</option>
-                  <option value={15}>15 Seconds (Base + 1 Extension)</option>
-                  <option value={22}>22 Seconds (Base + 2 Extensions)</option>
-                  <option value={29}>29 Seconds (Base + 3 Extensions)</option>
+                  <option value={8}>8 Seconds (Short)</option>
+                  <option value={16}>16 Seconds (Standard)</option>
+                  <option value={20}>20 Seconds (Extended)</option>
                 </select>
-                <p className="text-xs text-brand/60 mt-2">Note: Longer durations require multiple API extension calls, charging more credits.</p>
+                <p className="text-xs text-brand/60 mt-2">Note: Render durations of 16s or 20s in 1080p take materially longer and use more credits.</p>
               </div>
             </div>
 

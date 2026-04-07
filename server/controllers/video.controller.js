@@ -41,14 +41,12 @@ export const generateVideo = async (req, res) => {
         // Background Processing
         (async () => {
             try {
-                // OpenAI often accepts standard strings for resolutions or aspect ratios
+                // Sora 2 Pro specifically targets 1080p exports
                 const dimensionMap = {
-                    "16:9": "1280x720",
-                    "9:16": "720x1280",
-                    "1:1": "720x720",
-                    "4:3": "960x720"
+                    "16:9": "1920x1080",
+                    "9:16": "1080x1920"
                 };
-                const videoRes = dimensionMap[project.dimension] || "1280x720";
+                const videoRes = dimensionMap[project.dimension] || "1920x1080";
 
                 // 1. Synthesize Master Shot using AutoGen Cinematographer
                 console.log("Synthesizing Master Continuous Shot via OpenAI Sora optimization...");
@@ -140,7 +138,7 @@ export const regenerateScene = async (req, res) => {
         (async () => {
             try {
                 const finalPrompt = buildCinematicPrompt(promptOverride || scene.prompt, { tone: project.style }, template);
-                const videoUrl = await generateVideoOpenAIAsync(finalPrompt, template.defaultDuration || 5, "1280x720");
+                const videoUrl = await generateVideoOpenAIAsync(finalPrompt, template.defaultDuration || 8, "1920x1080");
                 
                 // For Sora, a "scene regeneration" updates the entire project's shot if requested
                 // or we update the scene status. 

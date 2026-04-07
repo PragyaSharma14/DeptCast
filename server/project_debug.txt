@@ -1,0 +1,15 @@
+{
+  "id": "624c200f-74ab-413b-ac36-9127b31a21bd",
+  "userId": "5d37ac77-53b5-41c3-8f07-062f4f8e1f8e",
+  "organizationId": "6a1059bb-a692-4958-bb49-d22f6b9d55f0",
+  "intent": "A policy update regarding use of AI and vibe coding for Software development team.",
+  "domain": "hr",
+  "style": "standard, clear focus, balanced lighting",
+  "avatar": "alex",
+  "voice": "v_american_m",
+  "dimension": "16:9",
+  "targetDuration": 8,
+  "status": "completed",
+  "finalVideoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "createdAt": "2026-04-07T13:19:42.551Z"
+}

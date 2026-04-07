@@ -69,6 +69,21 @@ export const VideoDetail = () => {
 
     const isGenerating = project.status === 'generating' || project.status === 'pending';
     const isFailed = project.status === 'failed';
+    const isDraft = project.status === 'draft';
+
+    const handleStartRender = async () => {
+        setLoading(true);
+        try {
+            const { generateVideo } = await import('../../services/api');
+            await generateVideo(projectId);
+            await fetchDetails();
+        } catch(e) {
+            console.error(e);
+            alert("Failed to start rendering.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -90,6 +105,7 @@ export const VideoDetail = () => {
                             "text-xs px-2.5 py-1 rounded-md font-medium uppercase tracking-wider",
                             isGenerating ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : 
                             isFailed ? "bg-red-500/10 text-red-400 border border-red-500/20" : 
+                            isDraft ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" :
                             "bg-green-500/10 text-green-400 border border-green-500/20"
                         )}>
                             {project.status}
@@ -137,6 +153,17 @@ export const VideoDetail = () => {
                                     className="w-full h-full object-contain"
                                 />
                             </div>
+                        </Card>
+                    ) : isDraft ? (
+                        <Card className="aspect-video flex flex-col items-center justify-center bg-brand/5 border-brand/20 border-dashed border-2 text-center p-8">
+                            <div className="p-4 rounded-full bg-brand/10 mb-4">
+                                <VideoIcon className="h-10 w-10 text-brand" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">Script Approved</h3>
+                            <p className="text-gray-400 max-w-sm mb-6">The narration and scenes have been generated. Click below to begin the master Sora rendering.</p>
+                            <Button onClick={handleStartRender} size="lg">
+                                <Play className="mr-2 h-4 w-4" /> Commence Render
+                            </Button>
                         </Card>
                     ) : isFailed ? (
                         <Card className="aspect-video flex flex-col items-center justify-center bg-red-900/10 border-red-500/20 text-center p-8">
