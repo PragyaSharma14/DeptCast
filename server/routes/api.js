@@ -21,7 +21,6 @@ router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-router.use('/auth', authRoutes);
 router.use('/orgs', orgRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/sectors', sectorRoutes);
