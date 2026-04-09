@@ -35,6 +35,9 @@ export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/sc
 export const getDepartments = () => api.get('/departments').then(res => res.data);
 export const getTemplatesByDepartment = (deptId) => api.get(`/departments/${deptId}/templates`).then(res => res.data);
 
+export const getSectors = () => api.get('/sectors').then(res => res.data);
+export const getDepartmentsBySector = (sectorId) => api.get(`/sectors/${sectorId}/departments`).then(res => res.data);
+
 // Auth & Tenant APIs
 export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
 export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);

@@ -48,17 +48,32 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-brand to-purple-400;
 }
 
-/* Custom Scrollbar for dark theme */
+/* Standardized Premium Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #08060d;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  transition: all 0.3s ease-in-out;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: rgba(170, 59, 255, 0.6);
+}
+
+.stealth-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+.stealth-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.stealth-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+.stealth-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
 }

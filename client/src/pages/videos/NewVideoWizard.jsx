@@ -10,10 +10,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const NewVideoWizard = () => {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
+  const [sectors, setSectors] = useState([]);
+  const [selectedSectorId, setSelectedSectorId] = useState('');
   const [departments, setDepartments] = useState([]);
   const [templates, setTemplates] = useState([]);
   
   const [config, setConfig] = useState({
+    sector: '',
     department: '',
     templateId: '',
     style: 'Cinematic',
@@ -23,16 +26,30 @@ export const NewVideoWizard = () => {
   });
 
   useEffect(() => {
-    getDepartments().then(data => {
-        setDepartments(data);
-        const storedDept = localStorage.getItem('deptcast_current_dept');
-        if (storedDept && data.find(d => d.key === storedDept)) {
-            setConfig(prev => ({ ...prev, department: storedDept }));
-        } else if (data.length > 0) {
-            setConfig(prev => ({ ...prev, department: data[0].key }));
+    import('../../services/api').then(api => {
+      api.getSectors().then(data => {
+        setSectors(data);
+        if (data.length > 0) {
+          setSelectedSectorId(data[0].id);
+          setConfig(prev => ({ ...prev, sector: data[0].name }));
         }
-    }).catch(console.error);
+      });
+    });
   }, []);
+
+  useEffect(() => {
+    if (selectedSectorId) {
+      import('../../services/api').then(api => {
+        api.getDepartmentsBySector(selectedSectorId).then(data => {
+          setDepartments(data);
+          // If current dept is not in the new sector list, reset it
+          if (data.length > 0) {
+            setConfig(prev => ({ ...prev, department: data[0].key }));
+          }
+        });
+      });
+    }
+  }, [selectedSectorId]);
 
   useEffect(() => {
     if (config.department) {
@@ -91,73 +108,120 @@ export const NewVideoWizard = () => {
               <div className="w-8 h-8 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold">1</div>
               <h2 className="text-2xl font-heading font-semibold text-white">Select Your Foundation</h2>
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-black/40 backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative z-20 mb-32">
                 
-                {/* Department Sidebar (1/4 width) */}
-                <div className="flex flex-col gap-3">
-                   {departments.map(dept => (
-                       <button 
-                         key={dept.key}
-                         onClick={() => setConfig({...config, department: dept.key, templateId: ''})}
-                         className={cn(
-                             "relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left overflow-hidden group backdrop-blur-sm",
-                             config.department === dept.key 
-                              ? `bg-brand/10 border-brand shadow-[0_0_20px_var(--color-brand-glow)] ring-1 ring-brand/50`
-                              : "bg-black/20 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white"
-                         )}
-                       >
-                           {config.department === dept.key && (
-                               <motion.div layoutId="active-dept" className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand" />
-                           )}
-                           <Building2 className={cn("h-5 w-5", config.department === dept.key ? "text-brand" : "opacity-50")} />
-                           <div className="flex-1">
-                               <span className={cn("font-bold block", config.department === dept.key ? "text-white" : "")}>{dept.name}</span>
-                           </div>
-                       </button>
-                   ))}
+                {/* 1. Sectors Pane (Industry) */}
+                <div className="lg:col-span-2 border-r border-white/5 flex flex-col bg-black/20">
+                    <div className="p-4 border-b border-white/5 bg-white/5">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">1. Sector</span>
+                    </div>
+                    <div className="overflow-y-auto stealth-scrollbar p-2 space-y-1 h-[500px] pb-48">
+                        {sectors.map(sector => (
+                            <button
+                                key={sector.id}
+                                onClick={() => setSelectedSectorId(sector.id)}
+                                className={cn(
+                                    "w-full px-4 py-3 rounded-xl text-left transition-all duration-200 text-xs font-medium group relative",
+                                    selectedSectorId === sector.id 
+                                        ? "bg-brand/10 text-white" 
+                                        : "text-gray-500 hover:bg-white/5 hover:text-gray-300"
+                                )}
+                            >
+                                {selectedSectorId === sector.id && (
+                                    <motion.div layoutId="sector-pip" className="absolute left-0 top-2 bottom-2 w-0.5 bg-brand rounded-full" />
+                                )}
+                                {sector.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Templates Grid (3/4 width) */}
-                <div className="lg:col-span-3 flex flex-col">
-                   {templates.length === 0 ? (
-                       <div className="p-12 text-center text-gray-500 border border-dashed border-white/5 rounded-3xl bg-black/10 backdrop-blur-md">
-                           <Loader2 className="animate-spin h-8 w-8 mx-auto mb-3 opacity-50 text-brand" />
-                           Loading Production Blueprints...
-                       </div>
-                   ) : (
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
-                           {templates.map((tpl, i) => (
-                               <motion.button 
-                                 key={tpl.id}
-                                 initial={{ opacity: 0, scale: 0.95 }}
-                                 animate={{ opacity: 1, scale: 1 }}
-                                 transition={{ delay: i * 0.05 }}
-                                 onClick={() => setConfig({...config, templateId: tpl.id})}
-                                 className={cn(
-                                     "relative flex flex-col p-6 rounded-3xl border transition-all duration-300 text-left group bg-black/40 backdrop-blur-xl hover:-translate-y-1 shadow-lg shrink-0 h-full",
-                                     config.templateId === tpl.id 
-                                      ? "border-blue-500 shadow-[0_4px_30px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/50"
-                                      : "border-white/5 hover:border-blue-500/30"
-                                 )}
-                               >
-                                   {config.templateId === tpl.id && (
-                                     <div className="absolute top-0 right-0 p-4">
-                                       <CheckCircle2 className="text-blue-400 h-5 w-5" />
-                                     </div>
-                                   )}
-                                   
-                                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-colors shrink-0", config.templateId === tpl.id ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-gray-400")}>
-                                       <Presentation className="h-5 w-5" />
-                                   </div>
-                                   <span className={cn("text-lg font-bold mb-2 tracking-wide", config.templateId === tpl.id ? "text-blue-100" : "text-gray-200")}>{tpl.title}</span>
-                                   <span className="text-sm text-gray-500 leading-relaxed font-medium line-clamp-2">
-                                       {JSON.parse(tpl.keyPoints).join(' • ')}
-                                   </span>
-                               </motion.button>
-                           ))}
-                       </div>
-                   )}
+                {/* 2. Departments Pane (Internal Units) */}
+                <div className="lg:col-span-3 border-r border-white/5 flex flex-col bg-black/10">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">2. Department</span>
+                        {departments.length > 0 && <span className="text-[10px] bg-white/5 px-1.5 rounded opacity-40">{departments.length}</span>}
+                    </div>
+                    <div className="overflow-y-auto stealth-scrollbar p-2 space-y-1 h-[500px] pb-48">
+                        {departments.map(dept => (
+                            <button
+                                key={dept.key}
+                                onClick={() => setConfig({...config, department: dept.key, templateId: ''})}
+                                className={cn(
+                                    "w-full px-4 py-3 rounded-xl text-left transition-all duration-200 group relative flex items-center gap-3",
+                                    config.department === dept.key 
+                                        ? "bg-white/10 text-white shadow-inner" 
+                                        : "text-gray-500 hover:bg-white/5 hover:text-gray-300"
+                                )}
+                            >
+                                <Building2 className={cn("w-4 h-4 shrink-0", config.department === dept.key ? "text-brand" : "opacity-20")} />
+                                <span className="text-xs font-semibold truncate uppercase tracking-wider">{dept.name}</span>
+                                {config.department === dept.key && (
+                                    <div className="ml-auto">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(170,59,255,0.8)]" />
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 3. Templates Pane (Blueprints) */}
+                <div className="lg:col-span-7 flex flex-col">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">3. Production Blueprint</span>
+                        <div className="flex items-center gap-2">
+                             <Sparkles className="w-3 h-3 text-brand" />
+                             <span className="text-[10px] text-gray-400 font-medium">AI Trained Models</span>
+                        </div>
+                    </div>
+                    
+                    <div className="overflow-y-auto stealth-scrollbar p-6 h-[500px] pb-48">
+                        {templates.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
+                                <div className="p-6 rounded-3xl bg-white/5 border border-white/5">
+                                    <Loader2 className="animate-spin h-8 w-8 text-brand opacity-50" />
+                                </div>
+                                <p className="text-sm font-medium">Syncing specialized blueprints...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-12">
+                                {templates.map((tpl, i) => (
+                                    <motion.button 
+                                      key={tpl.id}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: i * 0.03 }}
+                                      onClick={() => setConfig({...config, templateId: tpl.id})}
+                                      className={cn(
+                                          "relative flex flex-col p-5 rounded-2xl border transition-all duration-300 text-left group bg-white/5 hover:-translate-y-1 shadow-xl h-full",
+                                          config.templateId === tpl.id 
+                                            ? "border-blue-500 bg-blue-500/5 ring-1 ring-blue-500/30"
+                                            : "border-white/5 hover:border-white/20"
+                                      )}
+                                    >
+                                        <div className={cn(
+                                            "w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-colors shrink-0",
+                                            config.templateId === tpl.id ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-gray-500"
+                                        )}>
+                                            <Presentation className="h-4 w-4" />
+                                        </div>
+                                        <h4 className={cn("text-base font-bold mb-1 tracking-tight", config.templateId === tpl.id ? "text-blue-100" : "text-gray-200")}>{tpl.title}</h4>
+                                        <p className="text-[11px] text-gray-500 leading-relaxed font-medium line-clamp-2">
+                                            {JSON.parse(tpl.keyPoints).join(' • ')}
+                                        </p>
+
+                                        {config.templateId === tpl.id && (
+                                            <div className="absolute top-4 right-4 text-blue-400">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                            </div>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </motion.div>
@@ -262,7 +326,7 @@ export const NewVideoWizard = () => {
                 </div>
 
                 <div className="space-y-6">
-                   <div className="p-6 rounded-3xl bg-black border border-white/5 shadow-2xl relative overflow-hidden h-full flex flex-col justify-between max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                   <div className="p-6 rounded-3xl bg-black border border-white/5 shadow-2xl relative overflow-hidden h-full flex flex-col justify-between max-h-[450px] overflow-y-auto stealth-scrollbar">
                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-3xl rounded-full" />
                        <div className="relative z-10 w-full mb-4">
                            <DimensionSelector 
@@ -294,9 +358,9 @@ export const NewVideoWizard = () => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, type: "spring", bounce: 0.4 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none"
         >
-            <div className="bg-black/60 backdrop-blur-2xl p-2 rounded-full border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex items-center justify-between pr-2 pl-6 overflow-hidden relative">
+            <div className="bg-black/60 backdrop-blur-2xl p-2 rounded-full border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex items-center justify-between pr-2 pl-6 overflow-hidden relative pointer-events-auto">
                 <div className="absolute inset-0 bg-gradient-to-r from-brand/5 to-transparent pointer-events-none" />
                 
                 <div className="flex flex-col mr-6 z-10 py-2">

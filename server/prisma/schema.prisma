@@ -61,6 +61,25 @@ model Project {
   scenes         Scene[]
 }
 
+model Sector {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g. "healthcare-pharma"
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+
+  departments SectorDepartment[]
+}
+
+model SectorDepartment {
+  sectorId     String
+  departmentId String
+  sector       Sector     @relation(fields: [sectorId], references: [id])
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  @@id([sectorId, departmentId])
+}
+
 model Department {
   id          String     @id @default(uuid())
   key         String     @unique // e.g. "hr", "it-support"
@@ -73,6 +92,7 @@ model Department {
   updatedAt   DateTime   @updatedAt
 
   templates   Template[]
+  sectors     SectorDepartment[]
 }
 
 model Template {
