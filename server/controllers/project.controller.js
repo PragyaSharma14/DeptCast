@@ -46,7 +46,18 @@ export const createProject = async (req, res) => {
         });
 
         if (!response.ok) {
+            const status = response.status;
             const errorText = await response.text();
+            
+            // Handle Quota/Credit errors specifically
+            if (status === 402 || status === 429) {
+                return res.status(status).json({ 
+                    error: "Insufficient AI Credits", 
+                    code: "CREDITS_EXHAUSTED",
+                    details: "Your API quota for AI script generation has been exceeded."
+                });
+            }
+            
             throw new Error(`AutoGen Microservice failed: ${errorText}`);
         }
 

@@ -32,7 +32,10 @@ async def generate_script(req: VideoGenerationRequest):
         )
         return {"status": "success", "scenes": scenes}
     except Exception as e:
+        error_msg = str(e).lower()
         print(f"Error in AutoGen workflow: {str(e)}")
+        if any(keyword in error_msg for keyword in ["quota", "credit", "limit", "rate limit", "balance"]):
+            raise HTTPException(status_code=402, detail="AI Quota Exceeded: Please check your API credits/limits.")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate-master-shot")

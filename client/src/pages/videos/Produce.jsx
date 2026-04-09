@@ -53,7 +53,12 @@ export const Produce = () => {
         }
       } catch (err) {
         console.error(err);
-        setError("AI Script Engine failed to process the request. Ensure backend is running.");
+        const errorData = err.response?.data;
+        if (errorData?.code === 'CREDITS_EXHAUSTED' || errorData?.status === 402) {
+          setError("Insufficient AI Credits: Your API quota has been reached. Please top up your credits to continue production.");
+        } else {
+          setError("AI Script Engine failed to process the request. Ensure backend is running and you have enough credits.");
+        }
       }
     };
 

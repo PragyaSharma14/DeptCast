@@ -203,25 +203,34 @@ export const inviteUser = async (req, res) => {
       }
     });
 
-    const inviteUrl = `http://localhost:5173/invite?token=${rawToken}&email=${email}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const inviteUrl = `${frontendUrl}/invite?token=${rawToken}&email=${email}`;
 
     let sentViaEmail = false;
     if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_placeholder_key') {
       try {
-        const { error } = await resend.emails.send({
-          from: 'onboarding@resend.dev',
+        console.log(`[RESEND] Attempting to send invite to ${email} using key starting with ${process.env.RESEND_API_KEY.substring(0, 5)}...`);
+        const { data, error } = await resend.emails.send({
+          from: 'onboarding@resend.dev', // Ensure domain is verified in Resend dashboard!
           to: email,
           subject: `Invitation to join ${req.org.name}`,
           html: `
-            <h2>You've been invited!</h2>
-            <p>You have been invited to join the workspace <strong>${req.org.name}</strong> as a <strong>${role}</strong>.</p>
-            <p><a href="${inviteUrl}" style="padding: 8px 16px; background-color: #1a1a1a; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Accept Invitation</a></p>
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+              <h2 style="color: #1a1a1a;">You've been invited!</h2>
+              <p style="color: #666; line-height: 1.6;">You have been invited to join the <strong>${req.org.name}</strong> workspace as a <strong>${role}</strong>.</p>
+              <div style="margin: 30px 0;">
+                <a href="${inviteUrl}" style="padding: 12px 24px; background-color: #000; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Accept Invitation</a>
+              </div>
+              <p style="color: #999; font-size: 12px;">If the button doesn't work, copy and paste this link: <br/> ${inviteUrl}</p>
+            </div>
           `
         });
         
         if (error) {
-          console.error("Resend Error Object:", error);
+          console.error("[RESEND ERROR] Failed to send email:", error.message || error);
+          if (error.name === 'validation_error') console.error("[RESEND TIP] This usually means you need to verify your domain or the recipient is not in your test list.");
         } else {
+          console.log(`[RESEND SUCCESS] Email sent! ID: ${data?.id}`);
           sentViaEmail = true;
         }
       } catch (err) {
