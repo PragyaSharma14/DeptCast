@@ -17,7 +17,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const allowedOrigins = ['https://dept-cast.vercel.app', 'http://localhost:5173'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://dept-cast.vercel.app',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
+];
 
 app.use(cors({
   origin: function (origin, callback) {
