@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 parent_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(parent_env_path)
 
-def run_autogen_cinematographer(scenes: list, dimension: str, avatar: str) -> str:
+def run_autogen_cinematographer(scenes: list, dimension: str, style: str, template: str) -> str:
     """
-    Takes an array of discrete narrative scenes and synthesizes them into ONE continuous 8-second 
-    cinematic master prompt suitable for Google Veo 3.1.
+    Takes an array of discrete narrative scenes and synthesizes them into ONE continuous 
+    cinematic master prompt suitable for OpenAI Sora.
     """
     groq_api_key = os.getenv("GROQ_API_KEY")
     if not groq_api_key:
@@ -26,16 +26,25 @@ def run_autogen_cinematographer(scenes: list, dimension: str, avatar: str) -> st
         "temperature": 0.5,
     }
 
-    system_message_cinematographer = f"""You are an elite Cinematographer.
+    style_guide = ""
+    if style.lower() == "cinematic":
+        style_guide = "Use photorealistic cinematic terms: volumetric lighting, anamorphic lenses, depth of field, natural professional environments, realistic human presence."
+    else:
+        style_guide = "Use infographic and motion graphic terms: clean 2D vector illustrations, bold flat colors, kinetic typography, smooth isometric transitions, NO photorealism, isolated minimal backgrounds."
+
+
+    system_message_cinematographer = f"""You are an elite Cinematographer and Visual Concept Artist.
 Current Constraints:
 - Output Dimension: {dimension}
-- Anchor Subject: {avatar}
-- Target Platform: OpenAI Sora AI
-- Target Duration: Continuous dynamic tracking shot.
+- Specific Template Constraints: {template}
+- Target Platform: OpenAI Sora 
+- Target Formulation: Continuous dynamic flow.
+- Required Visual Style: {style.upper()}
+- Visual Directives: {style_guide}
 
 Task: The user will provide a JSON array of scenes representing text overlays / narrative beats. 
-You must output exactly ONE highly descriptive, continuous visual prompt for OpenAI Sora that captures the essence of these beats seamlessly in one cohesive camera shot. 
-- Focus extensively on lighting, camera movement (e.g. 'drone tracking shot', 'dynamic pan'), and subject consistency.
+You must output exactly ONE highly descriptive, continuous visual prompt for OpenAI Sora that captures the essence of these beats seamlessly in one cohesive flow. 
+- Focus extensively on lighting, camera movement/transitions, and adhering strictly to the Visual Directives above.
 - Return ONLY the exact text prompt. Do not output JSON. Do not output markdown. Do not include introductory text.
 """
 
@@ -52,12 +61,10 @@ You must output exactly ONE highly descriptive, continuous visual prompt for Ope
         max_consecutive_auto_reply=1
     )
 
-    initial_message = f"Synthesize this script into a continuous 8-second master visual prompt:\n{json.dumps(scenes, indent=2)}"
+    initial_message = f"Synthesize this script into a continuous master visual prompt:\n{json.dumps(scenes, indent=2)}"
 
-    # Direct conversation between user and cinematographer for speed/efficiency
     user_proxy.initiate_chat(cinematographer, message=initial_message, max_turns=1)
 
-    # Get the last response from cinematographer
     final_output = ""
     for msg in reversed(user_proxy.chat_messages[cinematographer]):
         if msg.get("role") == "assistant" and msg.get("content"):
@@ -65,6 +72,6 @@ You must output exactly ONE highly descriptive, continuous visual prompt for Ope
             break
             
     if not final_output:
-        final_output = f"A continuous {dimension} 8-second cinematic tracking shot, professionally lit, featuring {avatar} gracefully performing various professional tasks in an upscale modern environment."
+        final_output = f"A continuous {dimension} 8-second visual flow, highly professional, reflecting standard corporate messaging."
         
     return final_output

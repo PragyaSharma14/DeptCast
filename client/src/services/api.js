@@ -32,6 +32,9 @@ export const createProject = (data) => api.post('/projects', data).then(res => r
 export const generateVideo = (projectId) => api.post(`/videos/project/${projectId}/generate`).then(res => res.data);
 export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/scene/${sceneId}/regenerate`, { promptOverride }).then(res => res.data);
 
+export const getDepartments = () => api.get('/departments').then(res => res.data);
+export const getTemplatesByDepartment = (deptId) => api.get(`/departments/${deptId}/templates`).then(res => res.data);
+
 // Auth & Tenant APIs
 export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
 export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);

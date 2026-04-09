@@ -5,38 +5,42 @@ import { generateScenes } from '../services/scene.service.js';
 
 export const createProject = async (req, res) => {
     try {
-        const { prompt, department, avatar, voice, dimension, targetDuration } = req.body;
-        if (!prompt) return res.status(400).json({ error: "Prompt is required" });
+        const { additionalPrompt, department, templateId, style, dimension, targetDuration } = req.body;
 
-        // Load Template based on department to get style hints
-        const template = getTemplateByDomain(department || 'marketing');
+        // Retrieve Template from DB
+        let templateSystemPrompt = "Standard corporate communication";
+        if (templateId) {
+            const dbTemplate = await prisma.template.findUnique({ where: { id: templateId } });
+            if (dbTemplate) {
+                templateSystemPrompt = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
+            }
+        }
         
-        // 1. Create Project Record with specific UI overrides
+        let initialIntent = additionalPrompt || "Standard template generation.";
+        
         const project = await prisma.project.create({
             data: {
                 userId: req.user.id || req.user._id,
                 organizationId: req.org.id || req.org._id,
-                intent: prompt,
-                domain: department || template.domain,
-                style: template.styleHints || 'standard',
-                avatar: avatar,
-                voice: voice,
+                intent: initialIntent,
+                domain: department || 'General',
+                style: style || 'Cinematic',
+                templateId: templateId || null,
                 dimension: dimension,
                 targetDuration: targetDuration || 8,
                 status: 'draft'
             }
         });
 
-        // 2. Generate structured scenes via AutoGen Python Microservice
-        console.log("Generating Structured Scenes via AutoGen Microservice...");
+        console.log("Generating Structured Scenes via AutoGen (GPT-4o) Microservice...");
         const response = await fetch('http://localhost:8000/generate-script', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                prompt,
-                department: department || 'marketing',
-                avatar: avatar || 'standard',
-                voice: voice || 'standard',
+                prompt: initialIntent,
+                department: department || 'General',
+                style: style || 'Cinematic',
+                template: templateSystemPrompt,
                 dimension: dimension || '16:9'
             })
         });

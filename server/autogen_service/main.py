@@ -8,15 +8,16 @@ app = FastAPI(title="DeptCast AutoGen Microservice")
 
 class VideoGenerationRequest(BaseModel):
     department: str
-    avatar: str
-    voice: str
     dimension: str
     prompt: str
+    style: str
+    template: str
 
 class MasterShotRequest(BaseModel):
     scenes: List[Dict[str, Any]]
     dimension: str
-    avatar: str
+    style: str
+    template: str
 
 @app.post("/generate-script")
 async def generate_script(req: VideoGenerationRequest):
@@ -24,8 +25,8 @@ async def generate_script(req: VideoGenerationRequest):
         print(f"Received request for {req.department} with prompt: {req.prompt}")
         scenes = run_autogen_workflow(
             department=req.department,
-            avatar=req.avatar,
-            voice=req.voice,
+            style=req.style,
+            template=req.template,
             dimension=req.dimension,
             user_prompt=req.prompt
         )
@@ -41,7 +42,8 @@ async def generate_master_shot(req: MasterShotRequest):
         master_prompt = run_autogen_cinematographer(
             scenes=req.scenes,
             dimension=req.dimension,
-            avatar=req.avatar
+            style=req.style,
+            template=req.template
         )
         return {"status": "success", "master_prompt": master_prompt}
     except Exception as e:

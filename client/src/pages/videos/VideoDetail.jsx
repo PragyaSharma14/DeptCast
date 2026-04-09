@@ -128,10 +128,10 @@ export const VideoDetail = () => {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="flex flex-col gap-8 items-center max-w-4xl mx-auto">
                 
                 {/* Main Player Area */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="w-full space-y-6">
                     {isGenerating ? (
                         <Card className="aspect-video flex flex-col items-center justify-center border-dashed border-2 bg-black/40 text-center p-8">
                             <div className="relative mb-6">
@@ -171,7 +171,7 @@ export const VideoDetail = () => {
                                 <VideoIcon className="h-10 w-10 text-red-500 opacity-50 block" />
                             </div>
                             <h3 className="text-xl font-bold text-red-400 mb-2">Generation Failed</h3>
-                            <p className="text-gray-400 max-w-sm">The background rendering cluster encountered an error. Please try regenerating individual scenes.</p>
+                            <p className="text-gray-400 max-w-sm">The AI video rendering cluster encountered an error. Please adjust your prompt or try generating again later.</p>
                         </Card>
                     ) : null}
 
@@ -184,54 +184,6 @@ export const VideoDetail = () => {
                             </div>
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Scenes Sidebar */}
-                <div className="space-y-4">
-                    <h3 className="text-xl font-heading font-semibold text-white sticky top-20 bg-darker/90 backdrop-blur-md py-4 z-10 border-b border-white/10">
-                        Scene Breakdown
-                    </h3>
-                    
-                    <div className="space-y-4">
-                        {scenes.map((scene, i) => (
-                            <Card key={scene._id} className="overflow-hidden group hover:border-white/20 transition-all duration-300">
-                                {scene.videoUrl ? (
-                                    <div className="aspect-video bg-black relative">
-                                        <video src={getMediaUrl(scene.videoUrl)} controls className="w-full h-full object-cover" />
-                                    </div>
-                                ) : (
-                                    <div className="aspect-video bg-black/60 flex flex-col items-center justify-center text-gray-500 border-b border-white/5">
-                                        {scene.status === 'generating' ? (
-                                            <Loader2 className="animate-spin mb-3 text-brand" size={28} />
-                                        ) : (
-                                            <VideoIcon className="mb-3 opacity-30" size={28} />
-                                        )}
-                                        <span className="text-xs uppercase tracking-widest font-bold font-heading">{scene.status}</span>
-                                    </div>
-                                )}
-                                <CardContent className="p-4 flex flex-col gap-4">
-                                    <div className="flex gap-3 items-start">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-gray-400">
-                                            {scene.sceneNumber || i+1}
-                                        </div>
-                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all">
-                                            {scene.description}
-                                        </p>
-                                    </div>
-                                    <Button 
-                                        variant="secondary" 
-                                        size="sm"
-                                        onClick={() => handleRegenerateScene(scene._id)}
-                                        disabled={regenerating === scene._id || isGenerating}
-                                        className="w-full text-xs"
-                                    >
-                                        {regenerating === scene._id ? <Loader2 size={14} className="animate-spin mr-2" /> : <RotateCw size={14} className="mr-2" />}
-                                        Regenerate Fix
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
                 </div>
 
             </div>

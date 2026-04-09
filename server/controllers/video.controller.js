@@ -57,13 +57,21 @@ export const generateVideo = async (req, res) => {
                     data: { status: 'generating' }
                 });
 
+                // Fetch template rules 
+                let templateContext = "Standard Corporate Rules";
+                if (project.templateId) {
+                    const dbTemplate = await prisma.template.findUnique({ where: { id: project.templateId } });
+                    if (dbTemplate) templateContext = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
+                }
+
                 const autogenRes = await fetch('http://localhost:8000/generate-master-shot', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         scenes: scenes.map(s => ({ sceneNumber: s.sceneNumber, description: s.description })),
                         dimension: project.dimension || "16:9",
-                        avatar: project.avatar || "standard"
+                        style: project.style || "Cinematic",
+                        template: templateContext
                     })
                 });
 
