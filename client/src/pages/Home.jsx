@@ -13,28 +13,31 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { CreateScheduleModal } from '../components/features/CreateScheduleModal';
 
 export const Home = () => {
     const [, setLocation] = useLocation();
     const [stats, setStats] = useState(null);
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const loadData = async () => {
+        try {
+            const [statData, scheduleData] = await Promise.all([
+                getDashboardStats(),
+                getDashboardSchedules()
+            ]);
+            setStats(statData);
+            setSchedules(scheduleData);
+        } catch (err) {
+            console.error("Dashboard Load Error", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [statData, scheduleData] = await Promise.all([
-                    getDashboardStats(),
-                    getDashboardSchedules()
-                ]);
-                setStats(statData);
-                setSchedules(scheduleData);
-            } catch (err) {
-                console.error("Dashboard Load Error", err);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadData();
     }, []);
 
@@ -226,7 +229,7 @@ export const Home = () => {
                                     <p className="text-gray-400 font-bold">No upcoming broadcasts scheduled.</p>
                                     <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-1">Plan your next production to see it here</p>
                                 </div>
-                                <Button variant="secondary" className="rounded-xl mt-4" onClick={() => setLocation('/videos/new')}>Create Schedule</Button>
+                                <Button variant="secondary" className="rounded-xl mt-4" onClick={() => setIsModalOpen(true)}>Create Schedule</Button>
                             </div>
                         )}
                     </div>
@@ -264,6 +267,12 @@ export const Home = () => {
                     </div>
                 </div>
             </motion.div>
+
+            <CreateScheduleModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={loadData}
+            />
         </motion.div>
     );
 };

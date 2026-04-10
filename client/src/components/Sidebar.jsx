@@ -12,6 +12,10 @@ import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
 import { getSectors, getDepartmentsBySector } from '../services/api';
 
+const Cpu = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+);
+
 const sectorIconMap = {
     'technology-software': Cpu,
     'banking-finance': Banknote,
@@ -25,10 +29,6 @@ const sectorIconMap = {
     'consulting-professional-services': Briefcase,
     'government-public-sector': Shield
 };
-
-const Cpu = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
-);
 
 export const Sidebar = () => {
     const [location, setLocation] = useLocation();
