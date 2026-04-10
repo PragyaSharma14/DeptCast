@@ -5,7 +5,7 @@ import { ThreeBackground } from './ThreeBackground';
 
 export const Layout = ({ children }) => {
   return (
-    <div className="relative min-h-screen text-white font-sans font-light selection:bg-brand/30 flex">
+    <div className="relative min-h-screen font-sans font-light selection:bg-brand/30 flex">
       {/* Dynamic 3D background */}
       <ThreeBackground />
       

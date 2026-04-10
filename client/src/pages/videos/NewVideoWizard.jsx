@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { getDepartments, getTemplatesByDepartment } from '../../services/api';
+import { getWizardBootstrap, createProject, generateBlueprint } from '../../services/api';
 import { DimensionSelector } from '../../components/features/DimensionSelector';
 import { Button } from '../../components/ui/Button';
-import { Loader2, ArrowRight, ArrowLeft, Wand2, Building2, Presentation, Sparkles, Clapperboard, PenTool, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Wand2, Building2, Presentation, Sparkles, Clapperboard, PenTool, CheckCircle2, Layout, Sliders, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const NewVideoWizard = () => {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
-  const [sectors, setSectors] = useState([]);
-  const [selectedSectorId, setSelectedSectorId] = useState('');
-  const [departments, setDepartments] = useState([]);
-  const [templates, setTemplates] = useState([]);
+  const [initLoading, setInitLoading] = useState(true);
+  const [synthesizing, setSynthesizing] = useState(false);
   
+  // High-performance data cache
+  const [bootstrapData, setBootstrapData] = useState([]);
+  
+  const [selectedSectorId, setSelectedSectorId] = useState('');
   const [config, setConfig] = useState({
     sector: '',
     department: '',
@@ -25,46 +27,53 @@ export const NewVideoWizard = () => {
     additionalPrompt: ''
   });
 
+  // Optimized Bootstrap Fetch
   useEffect(() => {
-    import('../../services/api').then(api => {
-      api.getSectors().then(data => {
-        setSectors(data);
+    getWizardBootstrap()
+      .then(data => {
+        setBootstrapData(data);
         if (data.length > 0) {
-          setSelectedSectorId(data[0].id);
-          setConfig(prev => ({ ...prev, sector: data[0].name }));
+          const firstSector = data[0];
+          setSelectedSectorId(firstSector.id);
+          const firstDept = firstSector.departments[0];
+          
+          setConfig(prev => ({ 
+            ...prev, 
+            sector: firstSector.name,
+            department: firstDept?.key || '',
+            templateId: firstDept?.templates[0]?.id || ''
+          }));
         }
-      });
-    });
+      })
+      .catch(err => console.error("Bootstrap failed:", err))
+      .finally(() => setInitLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (selectedSectorId) {
-      import('../../services/api').then(api => {
-        api.getDepartmentsBySector(selectedSectorId).then(data => {
-          setDepartments(data);
-          // If current dept is not in the new sector list, reset it
-          if (data.length > 0) {
-            setConfig(prev => ({ ...prev, department: data[0].key }));
-          }
-        });
-      });
-    }
-  }, [selectedSectorId]);
+  // Derived State (Instant - No Round Trips)
+  const currentSector = bootstrapData.find(s => s.id === selectedSectorId);
+  const departments = currentSector?.departments || [];
+  const currentDepartment = departments.find(d => d.key === config.department);
+  const templates = currentDepartment?.templates || [];
+  const selectedTemplate = templates.find(t => t.id === config.templateId);
 
-  useEffect(() => {
-    if (config.department) {
-        const deptId = departments.find(d => d.key === config.department)?.id;
-        if (deptId) {
-            getTemplatesByDepartment(deptId).then(data => {
-                setTemplates(data);
-                // Auto-select first template for faster flow
-                if (data.length > 0 && !config.templateId) {
-                   setConfig(prev => ({ ...prev, templateId: data[0].id }));
-                }
-            }).catch(console.error);
-        }
-    }
-  }, [config.department, departments]);
+  const handleSectorChange = (sector) => {
+    setSelectedSectorId(sector.id);
+    const firstDept = sector.departments[0];
+    setConfig(prev => ({
+      ...prev,
+      sector: sector.name,
+      department: firstDept?.key || '',
+      templateId: firstDept?.templates[0]?.id || ''
+    }));
+  };
+
+  const handleDeptChange = (dept) => {
+    setConfig(prev => ({
+      ...prev,
+      department: dept.key,
+      templateId: dept.templates[0]?.id || ''
+    }));
+  };
 
   const handleGenerate = async () => {
     if (!config.templateId) return alert("Please select a valid blueprint.");
@@ -73,63 +82,106 @@ export const NewVideoWizard = () => {
     setLocation('/videos/produce/new');
   };
 
-  const selectedTemplate = templates.find(t => t.id === config.templateId);
+  const handleSynthesize = async () => {
+    if (!config.templateId) return alert("Please select a sector and department first.");
+    setSynthesizing(true);
+    try {
+        const result = await generateBlueprint({
+            department: config.department,
+            templateId: config.templateId,
+            style: config.style,
+            additionalPrompt: config.additionalPrompt
+        });
+        setConfig(prev => ({ ...prev, additionalPrompt: result.blueprint }));
+    } catch (err) {
+        console.error("Blueprint synthesis failed:", err);
+        alert("Strategic synthesis engine timed out. Please try again.");
+    } finally {
+        setSynthesizing(false);
+    }
+  };
+
+  if (initLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+          <div className="relative">
+              <div className="absolute inset-x-[-50%] inset-y-[-50%] bg-indigo-600/10 blur-3xl rounded-full" />
+              <Loader2 className="animate-spin h-12 w-12 text-indigo-600 relative z-10" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Production Assets</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto pb-24 font-sans text-gray-100">
+    <div className="max-w-6xl mx-auto pb-32 font-sans text-slate-800">
       
-      {/* Premium Gradient Background Blur */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[40vh] bg-brand/20 blur-[150px] rounded-[100%] pointer-events-none -z-10" />
+      {/* Background Atmosphere - Light & Airy */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[40vh] bg-indigo-50/50 blur-[150px] rounded-[100%] pointer-events-none -z-10" />
 
-      {/* Header */}
+      {/* Header - Executive Control */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-12 sm:mt-8 relative z-10"
+        className="flex flex-col md:flex-row md:items-center justify-between mb-12 sm:mt-10 relative z-10 gap-6"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <button 
             onClick={() => setLocation('/')}
-            className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-gray-400 hover:text-white transition-all shadow-lg border border-white/5"
+            className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-400 hover:text-indigo-600 transition-all shadow-sm border border-slate-200"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-4xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-tight">Create AI Studio Master</h1>
-            <p className="text-gray-400 mt-1">Design department-specific video communications implicitly powered by AutoGen & Sora.</p>
+            <div className="flex items-center gap-2 mb-1">
+                <Layout className="h-4 w-4 text-indigo-500" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Production Studio</span>
+            </div>
+            <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tight">Setup Production Blueprint</h1>
           </div>
+        </div>
+        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex -space-x-2">
+                {[1, 2, 3].map((s) => (
+                    <div key={s} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
+                        {s}
+                    </div>
+                ))}
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 lg:block hidden">Creative Configuration</span>
         </div>
       </motion.div>
 
-      <div className="space-y-10">
+      <div className="space-y-12">
 
+        {/* 1. Foundation Selection Table */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: 0.1 }}>
-            <div className="flex items-center gap-3 mb-4 pl-2">
-              <div className="w-8 h-8 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold">1</div>
-              <h2 className="text-2xl font-heading font-semibold text-white">Select Your Foundation</h2>
+            <div className="flex items-center gap-3 mb-6 pl-2">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-600/20">1</div>
+              <h2 className="text-2xl font-heading font-black text-slate-900">Configure Market & Department</h2>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-1 bg-black/40 backdrop-blur-2xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative z-20 mb-32">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-xl relative z-20">
                 
                 {/* 1. Sectors Pane (Industry) */}
-                <div className="lg:col-span-2 border-r border-white/5 flex flex-col bg-black/20">
-                    <div className="p-4 border-b border-white/5 bg-white/5">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">1. Sector</span>
+                <div className="lg:col-span-3 border-r border-slate-100 flex flex-col bg-slate-50/50">
+                    <div className="p-5 border-b border-slate-100 bg-white/50">
+                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-black">1. Industry Sector</span>
                     </div>
-                    <div className="overflow-y-auto stealth-scrollbar p-2 space-y-1 h-[500px] pb-48">
-                        {sectors.map(sector => (
+                    <div className="overflow-y-auto stealth-scrollbar p-3 space-y-1.5 h-[500px] pb-48">
+                        {bootstrapData.map(sector => (
                             <button
                                 key={sector.id}
-                                onClick={() => setSelectedSectorId(sector.id)}
+                                onClick={() => handleSectorChange(sector)}
                                 className={cn(
-                                    "w-full px-4 py-3 rounded-xl text-left transition-all duration-200 text-xs font-medium group relative",
+                                    "w-full px-4 py-3.5 rounded-2xl text-left transition-all duration-200 text-xs font-bold group relative",
                                     selectedSectorId === sector.id 
-                                        ? "bg-brand/10 text-white" 
-                                        : "text-gray-500 hover:bg-white/5 hover:text-gray-300"
+                                        ? "bg-white text-indigo-600 shadow-md ring-1 ring-slate-200" 
+                                        : "text-slate-400 hover:bg-white/50 hover:text-slate-600"
                                 )}
                             >
                                 {selectedSectorId === sector.id && (
-                                    <motion.div layoutId="sector-pip" className="absolute left-0 top-2 bottom-2 w-0.5 bg-brand rounded-full" />
+                                    <motion.div layoutId="sector-pip" className="absolute left-0 top-3 bottom-3 w-1 bg-indigo-600 rounded-full" />
                                 )}
                                 {sector.name}
                             </button>
@@ -138,28 +190,30 @@ export const NewVideoWizard = () => {
                 </div>
 
                 {/* 2. Departments Pane (Internal Units) */}
-                <div className="lg:col-span-3 border-r border-white/5 flex flex-col bg-black/10">
-                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">2. Department</span>
-                        {departments.length > 0 && <span className="text-[10px] bg-white/5 px-1.5 rounded opacity-40">{departments.length}</span>}
+                <div className="lg:col-span-3 border-r border-slate-100 flex flex-col bg-slate-50/30">
+                    <div className="p-5 border-b border-slate-100 bg-white/50 flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-black">2. Target Department</span>
+                        {departments.length > 0 && <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{departments.length}</span>}
                     </div>
-                    <div className="overflow-y-auto stealth-scrollbar p-2 space-y-1 h-[500px] pb-48">
+                    <div className="overflow-y-auto stealth-scrollbar p-3 space-y-1.5 h-[500px] pb-48">
                         {departments.map(dept => (
                             <button
                                 key={dept.key}
-                                onClick={() => setConfig({...config, department: dept.key, templateId: ''})}
+                                onClick={() => handleDeptChange(dept)}
                                 className={cn(
-                                    "w-full px-4 py-3 rounded-xl text-left transition-all duration-200 group relative flex items-center gap-3",
+                                    "w-full px-4 py-3.5 rounded-2xl text-left transition-all duration-200 group relative flex items-center gap-3",
                                     config.department === dept.key 
-                                        ? "bg-white/10 text-white shadow-inner" 
-                                        : "text-gray-500 hover:bg-white/5 hover:text-gray-300"
+                                        ? "bg-white text-slate-900 shadow-md ring-1 ring-slate-200" 
+                                        : "text-slate-400 hover:bg-white/50 hover:text-slate-600"
                                 )}
                             >
-                                <Building2 className={cn("w-4 h-4 shrink-0", config.department === dept.key ? "text-brand" : "opacity-20")} />
-                                <span className="text-xs font-semibold truncate uppercase tracking-wider">{dept.name}</span>
+                                <div className={cn("p-1.5 rounded-lg transition-colors", config.department === dept.key ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-300 opacity-50")}>
+                                    <Building2 className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-xs font-bold truncate uppercase tracking-widest">{dept.name}</span>
                                 {config.department === dept.key && (
                                     <div className="ml-auto">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(170,59,255,0.8)]" />
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                     </div>
                                 )}
                             </button>
@@ -167,54 +221,53 @@ export const NewVideoWizard = () => {
                     </div>
                 </div>
 
-                {/* 3. Templates Pane (Blueprints) */}
-                <div className="lg:col-span-7 flex flex-col">
-                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">3. Production Blueprint</span>
+                {/* 3. Templates Pane (Master Blueprints) */}
+                <div className="lg:col-span-6 flex flex-col bg-white">
+                    <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-black">3. Core Blueprint Selection</span>
                         <div className="flex items-center gap-2">
-                             <Sparkles className="w-3 h-3 text-brand" />
-                             <span className="text-[10px] text-gray-400 font-medium">AI Trained Models</span>
+                             <Sparkles className="w-3 h-3 text-indigo-500" />
+                             <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">AI Trained Logic</span>
                         </div>
                     </div>
                     
                     <div className="overflow-y-auto stealth-scrollbar p-6 h-[500px] pb-48">
                         {templates.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
-                                <div className="p-6 rounded-3xl bg-white/5 border border-white/5">
-                                    <Loader2 className="animate-spin h-8 w-8 text-brand opacity-50" />
-                                </div>
-                                <p className="text-sm font-medium">Syncing specialized blueprints...</p>
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest">Select a department above...</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-12">
                                 {templates.map((tpl, i) => (
                                     <motion.button 
                                       key={tpl.id}
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
                                       transition={{ delay: i * 0.03 }}
                                       onClick={() => setConfig({...config, templateId: tpl.id})}
                                       className={cn(
-                                          "relative flex flex-col p-5 rounded-2xl border transition-all duration-300 text-left group bg-white/5 hover:-translate-y-1 shadow-xl h-full",
+                                          "relative flex flex-col p-6 rounded-3xl border transition-all duration-300 text-left group hover:-translate-y-1 h-full",
                                           config.templateId === tpl.id 
-                                            ? "border-blue-500 bg-blue-500/5 ring-1 ring-blue-500/30"
-                                            : "border-white/5 hover:border-white/20"
+                                            ? "border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-200 shadow-lg shadow-indigo-600/5"
+                                            : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50 shadow-sm"
                                       )}
                                     >
                                         <div className={cn(
-                                            "w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-colors shrink-0",
-                                            config.templateId === tpl.id ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-gray-500"
+                                            "w-10 h-10 rounded-2xl flex items-center justify-center mb-5 transition-colors shrink-0",
+                                            config.templateId === tpl.id ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" : "bg-slate-100 text-slate-400"
                                         )}>
-                                            <Presentation className="h-4 w-4" />
+                                            <Presentation className="h-5 w-5" />
                                         </div>
-                                        <h4 className={cn("text-base font-bold mb-1 tracking-tight", config.templateId === tpl.id ? "text-blue-100" : "text-gray-200")}>{tpl.title}</h4>
-                                        <p className="text-[11px] text-gray-500 leading-relaxed font-medium line-clamp-2">
-                                            {JSON.parse(tpl.keyPoints).join(' • ')}
+                                        <h4 className={cn("text-base font-black mb-1.5 tracking-tight transition-colors", config.templateId === tpl.id ? "text-indigo-600" : "text-slate-900")}>{tpl.title}</h4>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed font-medium line-clamp-2">
+                                            {tpl.keyPoints ? JSON.parse(tpl.keyPoints).join(' • ') : "Strategic corporate blueprint"}
                                         </p>
 
                                         {config.templateId === tpl.id && (
-                                            <div className="absolute top-4 right-4 text-blue-400">
-                                                <CheckCircle2 className="h-4 w-4" />
+                                            <div className="absolute top-6 right-6 text-indigo-600">
+                                                <div className="bg-white rounded-full p-0.5 shadow-sm">
+                                                    <CheckCircle2 className="h-5 w-5" />
+                                                </div>
                                             </div>
                                         )}
                                     </motion.button>
@@ -226,126 +279,143 @@ export const NewVideoWizard = () => {
             </div>
         </motion.div>
 
-        {/* Visual Engine Config */}
+        {/* 2. Visual Engine Config */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: 0.2 }}>
-            <div className="flex items-center gap-3 mb-4 pl-2 mt-8">
-              <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">2</div>
-              <h2 className="text-2xl font-heading font-semibold text-white">Visual Engine Styling</h2>
+            <div className="flex items-center gap-3 mb-6 pl-2 mt-8">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-600/20">2</div>
+              <h2 className="text-2xl font-heading font-black text-slate-900">Visual Engine Styling</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
                  <button 
                      onClick={() => setConfig({...config, style: 'Cinematic'})}
                      className={cn(
-                         "relative flex flex-col p-8 rounded-3xl border transition-all duration-500 text-left overflow-hidden group hover:-translate-y-1 shadow-2xl",
+                         "relative flex flex-col p-10 rounded-[3rem] border transition-all duration-500 text-left overflow-hidden group hover:-translate-y-2 shadow-xl",
                          config.style === 'Cinematic' 
-                         ? "border-purple-400 ring-2 ring-purple-400/30 shadow-[0_0_40px_rgba(168,85,247,0.2)]" 
-                         : "border-white/5 hover:border-white/20 filter grayscale hover:grayscale-0"
+                         ? "border-indigo-600 bg-indigo-50/20 ring-2 ring-indigo-100 shadow-2xl shadow-indigo-600/10" 
+                         : "border-slate-200 bg-white grayscale hover:grayscale-0"
                      )}
                  >
                      <div className="absolute inset-0 z-0">
-                         <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Cinematic" className={cn(
-                             "w-full h-full object-cover transition-transform duration-700", 
-                             config.style === 'Cinematic' ? "opacity-[0.15] scale-105" : "opacity-[0.03] group-hover:opacity-10 group-hover:scale-105"
-                         )} />
+                          <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Cinematic" className={cn(
+                              "w-full h-full object-cover transition-transform duration-1000", 
+                              config.style === 'Cinematic' ? "opacity-20 scale-110" : "opacity-0 group-hover:opacity-10"
+                          )} />
                      </div>
-                     <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/80 to-black z-0 rounded-3xl" />
-
                      <div className="relative z-10 flex flex-col h-full">
-                         <div className="flex justify-between items-start mb-6">
-                            <div className={cn("p-4 rounded-2xl backdrop-blur-md border", config.style === 'Cinematic' ? "bg-purple-500/20 text-purple-300 border-purple-500/50" : "bg-white/5 border-white/5 text-gray-400")}>
-                                <Clapperboard className="w-8 h-8" />
+                         <div className="flex justify-between items-start mb-8">
+                            <div className={cn("p-5 rounded-[1.5rem] shadow-sm flex items-center justify-center", config.style === 'Cinematic' ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200")}>
+                                <Clapperboard size={32} />
                             </div>
-                            {config.style === 'Cinematic' && <div className="px-3 py-1 bg-purple-500/20 text-purple-300 text-xs font-bold uppercase rounded-full tracking-widest border border-purple-500/30">Active Engine</div>}
+                            {config.style === 'Cinematic' && <div className="px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-full tracking-widest shadow-lg shadow-indigo-600/20">Active Engine</div>}
                          </div>
-                         <h3 className="text-2xl font-bold text-white mb-2">High-Fidelity Cinematic</h3>
-                         <p className="text-gray-300 leading-relaxed max-w-sm">Deep rendering pipeline optimized for hyper-realism, photorealistic humans, anamorphic lighting, and premium corporate messaging depth.</p>
+                         <h3 className="text-2xl font-black text-slate-900 mb-3">High-Fidelity Cinematic</h3>
+                         <p className="text-slate-500 leading-relaxed font-medium">Deep rendering pipeline optimized for photorealistic humans, anamorphic lighting, and premium corporate depth.</p>
                      </div>
                  </button>
                  
                  <button 
                      onClick={() => setConfig({...config, style: 'Infographic'})}
                      className={cn(
-                         "relative flex flex-col p-8 rounded-3xl border transition-all duration-500 text-left overflow-hidden group hover:-translate-y-1 shadow-2xl",
+                         "relative flex flex-col p-10 rounded-[3rem] border transition-all duration-500 text-left overflow-hidden group hover:-translate-y-2 shadow-xl",
                          config.style === 'Infographic' 
-                         ? "border-emerald-400 ring-2 ring-emerald-400/30 shadow-[0_0_40px_rgba(52,211,153,0.2)]" 
-                         : "border-white/5 hover:border-white/20 filter grayscale hover:grayscale-0"
+                         ? "border-emerald-600 bg-emerald-50/20 ring-2 ring-emerald-100 shadow-2xl shadow-emerald-600/10" 
+                         : "border-slate-200 bg-white grayscale hover:grayscale-0"
                      )}
                  >
                      <div className="absolute inset-0 z-0">
-                         <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Infographics" className={cn(
-                             "w-full h-full object-cover transition-transform duration-700", 
-                             config.style === 'Infographic' ? "opacity-[0.25] scale-105 mix-blend-color-dodge" : "opacity-[0.05] group-hover:opacity-10 group-hover:scale-105"
-                         )} />
+                          <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Infographics" className={cn(
+                              "w-full h-full object-cover transition-transform duration-1000", 
+                              config.style === 'Infographic' ? "opacity-20 scale-110" : "opacity-0 group-hover:opacity-10"
+                          )} />
                      </div>
-                     <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/90 to-black z-0 rounded-3xl" />
-
                      <div className="relative z-10 flex flex-col h-full">
-                         <div className="flex justify-between items-start mb-6">
-                            <div className={cn("p-4 rounded-2xl backdrop-blur-md border", config.style === 'Infographic' ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50" : "bg-white/5 border-white/5 text-gray-400")}>
-                                <PenTool className="w-8 h-8" />
+                         <div className="flex justify-between items-start mb-8">
+                            <div className={cn("p-5 rounded-[1.5rem] shadow-sm flex items-center justify-center", config.style === 'Infographic' ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200")}>
+                                <PenTool size={32} />
                             </div>
-                            {config.style === 'Infographic' && <div className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase rounded-full tracking-widest border border-emerald-500/30">Active Engine</div>}
+                            {config.style === 'Infographic' && <div className="px-4 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-full tracking-widest shadow-lg shadow-emerald-600/20">Active Engine</div>}
                          </div>
-                         <h3 className="text-2xl font-bold text-white mb-2">2D Motion Graphics Layout</h3>
-                         <p className="text-gray-300 leading-relaxed max-w-sm">Generates beautifully stylized typography, crisp flat vectors, and isometric layout movements perfectly suited for data-heavy announcements.</p>
+                         <h3 className="text-2xl font-black text-slate-900 mb-3">2D Motion Graphics</h3>
+                         <p className="text-slate-500 leading-relaxed font-medium">Stylized typography, crisp flat vectors, and isometric movements perfectly suited for data-heavy announcements.</p>
                      </div>
                  </button>
             </div>
         </motion.div>
 
-        {/* User Context & Sizing */}
+        {/* 3. Global Context & Precision Control */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: 0.3 }}>
-            <div className="flex items-center gap-3 mb-4 pl-2 mt-8">
-              <div className="w-8 h-8 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold">3</div>
-              <h2 className="text-2xl font-heading font-semibold text-white">Directorial Overrides <span className="opacity-50 text-sm font-normal ml-2">(Optional)</span></h2>
+            <div className="flex items-center gap-3 mb-6 pl-2 mt-12">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-600/20">3</div>
+              <h2 className="text-2xl font-heading font-black text-slate-900">Directorial Overrides</h2>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 
-                <div className="lg:col-span-2 relative group p-1 rounded-3xl bg-gradient-to-b from-white/10 to-transparent">
-                  <div className="bg-black border border-white/5 rounded-[22px] overflow-hidden flex flex-col h-full">
-                      <div className="bg-white/5 px-6 py-4 flex items-center justify-between border-b border-white/5 backdrop-blur-sm">
+                {/* Override Editor */}
+                <div className="lg:col-span-2 relative group p-1.5 rounded-[2.5rem] bg-slate-100 border border-slate-200 shadow-sm">
+                  <div className="bg-white rounded-[2rem] overflow-hidden flex flex-col h-full border border-slate-200">
+                      <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-b border-slate-100">
                           <div className="flex items-center gap-2">
                               <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                                <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                                <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
                               </div>
-                              <span className="ml-3 text-xs font-mono text-gray-500 uppercase tracking-widest leading-none">AI Prompt Extension</span>
+                              <span className="ml-4 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">AI Production Protocol</span>
                           </div>
+                          <button 
+                            onClick={handleSynthesize}
+                            disabled={synthesizing || !config.templateId}
+                            className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest border border-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed group"
+                          >
+                             {synthesizing ? <Loader2 className="animate-spin h-3 w-3" /> : <Sparkles className="h-3 w-3 group-hover:animate-pulse" />}
+                             {synthesizing ? "Synthesizing..." : "Synthesize AI Blueprint"}
+                          </button>
                       </div>
                       <textarea 
                           value={config.additionalPrompt}
                           onChange={(e) => setConfig({ ...config, additionalPrompt: e.target.value })}
-                          placeholder="Type any specific details you want the AI to include, overriding the template defaults... (e.g. 'Must specifically mention John from accounting and use a bright red color palette.')"
-                          className="w-full h-40 bg-transparent p-6 text-gray-100 focus:outline-none resize-none transition-all placeholder:text-gray-600/70 font-mono text-sm leading-relaxed"
+                          placeholder="Inject specific details to override master defaults... (e.g. 'Emphasize reliability and use a corporate blue palette')"
+                          className="w-full h-56 bg-white p-8 text-slate-900 focus:outline-none resize-none transition-all placeholder:text-slate-300 font-bold text-lg leading-relaxed selection:bg-indigo-100"
                           spellCheck="false"
                       />
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                   <div className="p-6 rounded-3xl bg-black border border-white/5 shadow-2xl relative overflow-hidden h-full flex flex-col justify-between max-h-[450px] overflow-y-auto stealth-scrollbar">
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-3xl rounded-full" />
-                       <div className="relative z-10 w-full mb-4">
+                {/* Sizing & Intensity */}
+                <div className="space-y-8">
+                   <div className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-xl relative overflow-hidden h-full flex flex-col justify-between">
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 blur-3xl rounded-full opacity-50" />
+                       
+                       <div className="relative z-10 w-full mb-8">
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Screen Dimensions</p>
                            <DimensionSelector 
                                selectedId={config.dimension} 
                                onSelect={(id) => setConfig({ ...config, dimension: id })} 
                            />
                        </div>
-                       <div className="relative z-10 w-full border-t border-white/5 pt-6 mt-auto">
-                           <label className="block text-sm font-bold text-gray-300 mb-3 tracking-wide uppercase">Render Length (Secs)</label>
-                           <select 
-                               value={config.targetDuration}
-                               onChange={(e) => setConfig({ ...config, targetDuration: parseInt(e.target.value) })}
-                               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white appearance-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand font-medium tracking-wide shadow-inner cursor-pointer"
-                           >
-                               <option className="bg-black text-white" value={8}>8 Seconds (Short)</option>
-                               <option className="bg-black text-white" value={16}>16 Seconds (Standard)</option>
-                               <option className="bg-black text-white" value={20}>20 Seconds (Extended)</option>
-                           </select>
-                           <p className="text-[11px] text-gray-500 font-medium tracking-wide mt-3 leading-relaxed">Extending duration burns exactly <span className="text-white">x2</span> compute credits.</p>
+
+                       <div className="relative z-10 w-full border-t border-slate-100 pt-8 mt-auto">
+                           <label className="block text-[10px] font-black text-slate-400 mb-4 tracking-[0.2em] uppercase">Targeted Rendering Length</label>
+                           <div className="relative">
+                               <select 
+                                   value={config.targetDuration}
+                                   onChange={(e) => setConfig({ ...config, targetDuration: parseInt(e.target.value) })}
+                                   className="w-full bg-slate-50 border border-slate-200 rounded-[1.25rem] px-5 py-4 text-slate-900 appearance-none focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 font-black text-sm tracking-wide shadow-sm cursor-pointer"
+                               >
+                                   <option value={8}>8 Seconds (Focused)</option>
+                                   <option value={16}>16 Seconds (Standard Execution)</option>
+                                   <option value={20}>20 Seconds (Extended High-Impact)</option>
+                               </select>
+                               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                   <ChevronDown size={18} />
+                               </div>
+                           </div>
+                           <p className="text-[10px] text-slate-400 font-bold tracking-tight mt-5 leading-relaxed flex items-center gap-2">
+                               <Sparkles className="h-3 w-3 text-amber-400" />
+                               Extended durations require <span className="text-slate-900">x2 compute cycle credits.</span>
+                           </p>
                        </div>
                    </div>
                 </div>
@@ -353,20 +423,20 @@ export const NewVideoWizard = () => {
             </div>
         </motion.div>
 
-        {/* Floating Action Header overlay */}
+        {/* Executive Action Deck */}
         <motion.div 
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, type: "spring", bounce: 0.4 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-6 pointer-events-none"
         >
-            <div className="bg-black/60 backdrop-blur-2xl p-2 rounded-full border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex items-center justify-between pr-2 pl-6 overflow-hidden relative pointer-events-auto">
-                <div className="absolute inset-0 bg-gradient-to-r from-brand/5 to-transparent pointer-events-none" />
+            <div className="bg-white/95 backdrop-blur-3xl p-3.5 rounded-[3rem] border border-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex items-center justify-between pr-3.5 pl-10 overflow-hidden relative pointer-events-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-transparent pointer-events-none" />
                 
-                <div className="flex flex-col mr-6 z-10 py-2">
-                    <span className="text-xs uppercase tracking-widest text-gray-500 font-bold mb-0.5">Ready to Roll</span>
-                    <span className="text-sm text-gray-200 font-medium truncate max-w-[200px]">
-                        {selectedTemplate ? selectedTemplate.title : "Assemble Blueprint"}
+                <div className="flex flex-col mr-8 z-10 py-1">
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-0.5">Final Blueprint</span>
+                    <span className="text-sm text-slate-900 font-black truncate max-w-[240px]">
+                        {selectedTemplate ? selectedTemplate.title : "Assemble Strategic Blueprint"}
                     </span>
                 </div>
                 
@@ -374,10 +444,10 @@ export const NewVideoWizard = () => {
                     size="lg" 
                     onClick={handleGenerate} 
                     disabled={loading || !config.templateId}
-                    className="relative px-8 rounded-full bg-white text-black hover:bg-gray-200 hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.4)] z-10 border-none font-bold tracking-wide"
+                    className="relative px-11 rounded-full bg-indigo-600 text-white hover:bg-black hover:scale-105 transition-all shadow-xl shadow-indigo-600/20 z-10 border-none font-black text-sm tracking-widest uppercase py-7 h-auto"
                 >
-                    {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5 text-brand" /> : <Wand2 className="mr-2 h-5 w-5" />}
-                    {loading ? 'Booting Sora Pipeline...' : 'Generate Masterpiece'}
+                    {loading ? <Loader2 className="animate-spin mr-3 h-5 w-5" /> : <Wand2 className="mr-3 h-5 w-5" />}
+                    {loading ? 'Initializing Render...' : 'Generate Masterpiece'}
                 </Button>
             </div>
         </motion.div>

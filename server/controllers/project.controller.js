@@ -3,6 +3,50 @@ import { analyzeIntent } from '../services/intent.service.js';
 import { getTemplateByDomain } from '../services/template.service.js';
 import { generateScenes } from '../services/scene.service.js';
 
+export const generateBlueprint = async (req, res) => {
+    try {
+        const { department, templateId, style, additionalPrompt } = req.body;
+        
+        let templateSystemPrompt = "Standard corporate communication";
+        if (templateId) {
+            const dbTemplate = await prisma.template.findUnique({ where: { id: templateId } });
+            if (dbTemplate) {
+                templateSystemPrompt = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
+            }
+        }
+
+        const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const response = await fetch(`${autogenUrl}/generate-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: additionalPrompt || "Standard template generation.",
+                department: department || 'General',
+                style: style || 'Cinematic',
+                template: templateSystemPrompt,
+                dimension: '16:9' // Aspect ratio doesn't affect blueprint text
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Blueprint Generation failed: ${errorText}`);
+        }
+
+        const result = await response.json();
+        
+        // We return a structured blueprint text (summary of scenes/intent)
+        const blueprintText = result.scenes.map(s => 
+            `SCENE ${s.sceneNumber}: ${s.description}\n`
+        ).join('\n');
+
+        res.json({ blueprint: blueprintText });
+    } catch (error) {
+        console.error("Generate Blueprint Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const createProject = async (req, res) => {
     try {
         const { additionalPrompt, department, templateId, style, dimension, targetDuration } = req.body;

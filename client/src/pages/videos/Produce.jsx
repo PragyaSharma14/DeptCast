@@ -5,11 +5,11 @@ import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LOADING_STEPS = [
-  "Analyzing context and intent...",
-  "Applying department persona...",
-  "Structuring script layout...",
-  "Generating visual AI scenes...",
-  "Finalizing production plan..."
+  "Synthesizing Master Blueprint...",
+  "Synchronizing Strategic Intent...",
+  "Compiling Visual Assets...",
+  "Executing Render Protocol...",
+  "Finalizing Production Masterpiece..."
 ];
 
 export const Produce = () => {
@@ -18,10 +18,10 @@ export const Produce = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Cycle through loading messages purely for UX "magic"
+    // Cycle through professional milestones
     const stepInterval = setInterval(() => {
       setCurrentStep(prev => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
-    }, 2500);
+    }, 2800);
 
     const generate = async () => {
       try {
@@ -29,24 +29,19 @@ export const Produce = () => {
         if (!configStr) throw new Error("No configuration found. Please start over.");
         
         const config = JSON.parse(configStr);
-        // This leverages the existing backend logic cleanly
+        // Backend handles the blueprint execution silently
         const result = await createProject(config);
         const projectId = result.project?._id || result.project?.id;
 
         if (projectId) {
-            // PRODUCTION LEVEL: Automatically trigger the Sora generation so the user doesn't have to manually click "Compile"
             try {
-                // We import and use generateVideo from api.js (it was already imported but check name)
                 const { generateVideo: triggerGeneration } = await import('../../services/api');
                 await triggerGeneration(projectId);
             } catch (genErr) {
-                console.warn("Auto-generation trigger failed, user can still start it manually from the detail page:", genErr);
+                console.warn("Auto-generation trigger failed:", genErr);
             }
 
-            // Clear temp storage
             localStorage.removeItem('deptcast_pending_config');
-            
-            // Go straight to the Video Detail/Player page
             setLocation(`/videos/${projectId}`);
         } else {
             throw new Error("Invalid response from server");
@@ -55,9 +50,9 @@ export const Produce = () => {
         console.error(err);
         const errorData = err.response?.data;
         if (errorData?.code === 'CREDITS_EXHAUSTED' || errorData?.status === 402) {
-          setError("Insufficient AI Credits: Your API quota has been reached. Please top up your credits to continue production.");
+          setError("Strategic Quota Exceeded: Your enterprise credit allocation has been reached. Please contact administration.");
         } else {
-          setError("AI Script Engine failed to process the request. Ensure backend is running and you have enough credits.");
+          setError("Blueprint Execution Interrupted. Ensure connectivity and check project parameters.");
         }
       }
     };
@@ -69,67 +64,79 @@ export const Produce = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center max-w-md mx-auto space-y-4">
-        <div className="bg-red-500/10 p-4 rounded-full">
-          <CheckCircle2 className="h-12 w-12 text-red-500" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-md mx-auto space-y-6">
+        <div className="bg-red-50 p-5 rounded-3xl border border-red-100">
+          <CheckCircle2 className="h-10 w-10 text-red-500" />
         </div>
-        <h2 className="text-2xl font-bold">Failed to Generate</h2>
-        <p className="text-gray-400">{error}</p>
+        <div className="space-y-2">
+            <h2 className="text-3xl font-heading font-black text-slate-900 tracking-tight">Production Interrupted</h2>
+            <p className="text-slate-500 font-medium leading-relaxed">{error}</p>
+        </div>
         <button 
           onClick={() => setLocation('/videos/new')}
-          className="mt-4 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+          className="mt-4 px-8 py-3 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-600 rounded-2xl transition-all font-black text-xs uppercase tracking-widest shadow-sm"
         >
-          Go Back
+          Return to Studio
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-lg mx-auto space-y-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-lg mx-auto space-y-12 relative px-6">
+      
+      {/* Background Ambience */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vh] bg-indigo-50/40 blur-[120px] rounded-full pointer-events-none -z-10" />
+
       <motion.div
         animate={{ 
-          scale: [1, 1.1, 1],
-          rotate: [0, 5, -5, 0]
+          scale: [1, 1.05, 1],
+          opacity: [0.8, 1, 0.8]
         }}
         transition={{ 
-          duration: 3,
+          duration: 4,
           repeat: Infinity,
           ease: "easeInOut"
         }}
         className="relative"
       >
-        <div className="absolute inset-0 bg-brand/30 blur-3xl rounded-full scale-150" />
-        <div className="relative bg-darker p-6 rounded-3xl border border-white/10 shadow-[0_0_40px_var(--color-brand-glow)]">
-          <Sparkles className="h-16 w-16 text-brand" />
+        <div className="absolute inset-x-[-20%] inset-y-[-20%] bg-indigo-600/10 blur-3xl rounded-full" />
+        <div className="relative bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-indigo-600/5 ring-1 ring-slate-100">
+          <Sparkles className="h-20 w-20 text-indigo-600" />
         </div>
       </motion.div>
 
-      <div className="space-y-4 w-full">
-        <h2 className="text-3xl font-heading font-bold text-white">Generating Magic</h2>
+      <div className="space-y-6 w-full">
+        <div className="space-y-2">
+            <h2 className="text-4xl font-heading font-black text-slate-900 tracking-tight">Executing Strategic Blueprint</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Advanced AI Synthesis in Progress</p>
+        </div>
         
-        <div className="h-12 relative overflow-hidden">
+        <div className="h-16 relative overflow-hidden flex items-center justify-center">
           <AnimatePresence mode="popLayout">
             <motion.p
               key={currentStep}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-gray-400 font-medium absolute w-full text-center"
+              transition={{ duration: 0.5 }}
+              className="text-indigo-600 text-lg font-black absolute w-full text-center"
             >
               {LOADING_STEPS[currentStep]}
             </motion.p>
           </AnimatePresence>
         </div>
 
-        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mt-4">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-brand to-purple-400"
-            initial={{ width: "0%" }}
-            animate={{ width: `${((currentStep + 1) / LOADING_STEPS.length) * 100}%` }}
-            transition={{ duration: 0.5 }}
-          />
+        <div className="max-w-xs mx-auto space-y-4">
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200 p-0.5">
+              <motion.div 
+                className="h-full bg-indigo-600 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${((currentStep + 1) / LOADING_STEPS.length) * 100}%` }}
+                transition={{ duration: 0.8, ease: "circOut" }}
+              />
+            </div>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Efficiency Optimized for Enterprise</p>
         </div>
       </div>
     </div>

@@ -5,7 +5,9 @@ import { login as loginApi, register as registerApi } from '../services/api';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent } from '../components/ui/Card';
-import { Loader2, Video as VideoIcon } from 'lucide-react';
+import { Loader2, Video as VideoIcon, Sparkles, Zap, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +19,12 @@ export const Auth = () => {
     
     const [, setLocation] = useLocation();
     const { setUser, setToken } = useStore();
+
+    const features = [
+        { icon: Sparkles, title: "AI Production Blueprints", desc: "Draft complex production scripts with one click." },
+        { icon: Zap, title: "Instant Turbo Rendering", desc: "Our bootstrap technology eliminates API wait times." },
+        { icon: ShieldCheck, title: "Enterprise-Grade Security", desc: "Seamless workspace isolation and tenant security." }
+    ];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -36,7 +44,6 @@ export const Auth = () => {
                 currentOrganizationId: data.currentOrganizationId
             });
             
-            // Redirect to dashboard
             setLocation('/');
         } catch (err) {
             setError(err.response?.data?.error || 'Authentication failed');
@@ -46,91 +53,191 @@ export const Auth = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
-
-            <div className="z-10 w-full max-w-md">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-tr from-brand to-purple-500 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(170,59,255,0.3)]">
-                        <VideoIcon size={32} className="text-white" />
+        <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-slate-50 font-sans selection:bg-indigo-100">
+            
+            {/* Left Pane - Strategy & Value (Executive Side) */}
+            <div className="hidden lg:flex flex-col justify-between p-16 bg-slate-900 text-white relative overflow-hidden">
+                {/* Background Atmosphere */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/20 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 blur-[150px] rounded-full translate-y-1/2 -translate-x-1/2" />
+                
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-16">
+                        <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-600/20">
+                            <VideoIcon className="h-6 w-6 text-white" />
+                        </div>
+                        <span className="text-2xl font-black tracking-tighter font-heading text-white">
+                            Dept<span className="text-indigo-400">Cast</span>
+                        </span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Welcome to DeptCast</h1>
-                    <p className="text-gray-400 mt-2 text-center">
-                        {isLogin ? 'Sign in to access your enterprise workspace.' : 'Create an account to start generating videos.'}
-                    </p>
+
+                    <div className="max-w-md space-y-12 mt-20">
+                        <motion.div 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <h2 className="text-5xl font-heading font-black leading-tight mb-6 text-white">
+                                Powering the next gen of <span className="text-indigo-300">Video Content.</span>
+                            </h2>
+                            <p className="text-slate-300 text-lg leading-relaxed font-medium">
+                                Join hundreds of IT firms and enterprise departments using DeptCast to automate their high-fidelity production pipelines.
+                            </p>
+                        </motion.div>
+
+                        <div className="space-y-8 mt-12">
+                            {features.map((feature, idx) => (
+                                <motion.div 
+                                    key={idx}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.2 + (idx * 0.1) }}
+                                    className="flex items-start gap-5 group"
+                                >
+                                    <div className="mt-1 p-2.5 rounded-lg bg-white/10 border border-white/20 group-hover:bg-indigo-600/30 group-hover:border-indigo-600/50 transition-all">
+                                        <feature.icon className="h-5 w-5 text-indigo-300" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-base font-bold text-white mb-1">{feature.title}</h4>
+                                        <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
-                <Card className="bg-dark-glass border-white/10 backdrop-blur-xl">
-                    <CardContent className="p-8">
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                                    {error}
-                                </div>
-                            )}
-
-                            {!isLogin && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-300">Full Name</label>
-                                    <Input 
-                                        type="text" 
-                                        placeholder="John Doe" 
-                                        value={name} 
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className="bg-black/50 border-white/10 focus:border-brand"
-                                    />
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">Email Address</label>
-                                <Input 
-                                    type="email" 
-                                    placeholder="name@company.com" 
-                                    value={email} 
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    className="bg-black/50 border-white/10 focus:border-brand"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">Password</label>
-                                <Input 
-                                    type="password" 
-                                    placeholder="••••••••" 
-                                    value={password} 
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="bg-black/50 border-white/10 focus:border-brand"
-                                />
-                            </div>
-
-                            <Button 
-                                type="submit" 
-                                className="w-full mt-6 bg-brand hover:bg-brand/90 py-6"
-                                disabled={loading}
-                            >
-                                {loading ? <Loader2 className="animate-spin mr-2" /> : null}
-                                {isLogin ? 'Sign In' : 'Create Account'}
-                            </Button>
-                        </form>
-
-                        <div className="mt-6 text-center text-sm text-gray-400">
-                            {isLogin ? "Don't have an account? " : "Already have an account? "}
-                            <button 
-                                type="button" 
-                                onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                                className="text-brand hover:text-brand-light font-medium hover:underline"
-                            >
-                                {isLogin ? 'Sign up' : 'Sign in'}
-                            </button>
+                <div className="relative z-10 border-t border-white/10 pt-10 mt-20">
+                   <div className="flex items-center gap-4">
+                        <div className="flex -space-x-3">
+                            {[1,2,3,4].map(i => (
+                                <div key={i} className="w-9 h-9 rounded-full border-2 border-slate-900 bg-slate-700 shadow-xl" />
+                            ))}
                         </div>
-                    </CardContent>
-                </Card>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Trusted by 2k+ Teams</p>
+                   </div>
+                </div>
+            </div>
+
+            {/* Right Pane - Interaction & Form (Precision Side) */}
+            <div className="flex flex-col items-center justify-center p-8 sm:p-12 relative overflow-hidden bg-white sm:bg-slate-50">
+                {/* Mobile Tablet Branding */}
+                <div className="lg:hidden flex items-center gap-3 mb-10">
+                    <div className="bg-indigo-600 p-2 rounded-lg">
+                        <VideoIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-xl font-black text-slate-900 tracking-tighter font-heading">DeptCast</span>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    <motion.div 
+                        key={isLogin ? 'login' : 'register'}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="w-full max-w-md"
+                    >
+                        <div className="text-center sm:text-left mb-10">
+                            <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tight mb-3">
+                                {isLogin ? 'Sign In' : 'Create Account'}
+                            </h1>
+                            <p className="text-slate-500 font-medium">
+                                {isLogin ? 'Access your enterprise dashboard and production studio.' : 'Register to start your first visual blueprint today.'}
+                            </p>
+                        </div>
+
+                        <Card className="bg-white border-none sm:border sm:border-slate-200 sm:shadow-[0_20px_60px_rgba(0,0,0,0.05)] rounded-[2rem] overflow-hidden">
+                            <CardContent className="p-8 sm:p-10">
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {error && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold flex items-center gap-3"
+                                        >
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                                            {error}
+                                        </motion.div>
+                                    )}
+
+                                    {!isLogin && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase tracking-widest font-black text-slate-500 ml-1">Full Name</label>
+                                            <Input 
+                                                type="text" 
+                                                placeholder="John Doe" 
+                                                value={name} 
+                                                onChange={(e) => setName(e.target.value)}
+                                                required
+                                                className="bg-slate-50 border-slate-200 h-14 rounded-2xl focus:ring-indigo-600 focus:border-indigo-600 font-bold px-5 text-slate-900"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase tracking-widest font-black text-slate-500 ml-1">Email Address</label>
+                                        <Input 
+                                            type="email" 
+                                            placeholder="name@company.com" 
+                                            value={email} 
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="bg-slate-50 border-slate-200 h-14 rounded-2xl focus:ring-indigo-600 focus:border-indigo-600 font-bold px-5 text-slate-900"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between px-1">
+                                            <label className="text-[10px] uppercase tracking-widest font-black text-slate-500">Password</label>
+                                            {isLogin && <button type="button" className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600">Forgot Password?</button>}
+                                        </div>
+                                        <Input 
+                                            type="password" 
+                                            placeholder="••••••••" 
+                                            value={password} 
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            className="bg-slate-50 border-slate-200 h-14 rounded-2xl focus:ring-indigo-600 focus:border-indigo-600 font-bold px-5 text-slate-900"
+                                        />
+                                    </div>
+
+                                    <Button 
+                                        type="submit" 
+                                        className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-slate-900 text-white font-black uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-indigo-600/20"
+                                        disabled={loading}
+                                    >
+                                        {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                                        {isLogin ? 'Sign In' : 'Create Account'}
+                                        {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                                    </Button>
+                                </form>
+
+                                <div className="mt-10 flex flex-col items-center gap-4">
+                                    <div className="w-full flex items-center gap-4 text-slate-200">
+                                        <div className="flex-1 h-px bg-slate-100" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Account Actions</span>
+                                        <div className="flex-1 h-px bg-slate-100" />
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                                        className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 transition-all uppercase tracking-widest"
+                                    >
+                                        {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log In"}
+                                    </button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* Footer Notes */}
+                <div className="mt-12 text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-6">
+                    <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-slate-200" /> Secure Encryption</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-slate-200" /> SOC2 Compliant</span>
+                </div>
             </div>
         </div>
     );

@@ -6,9 +6,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 // Protect routes that require a logged-in user
 export const requireAuth = async (req, res, next) => {
   let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  const authHeader = req.headers.authorization;
+  if (authHeader) console.log(`[AUTH DEBUG] Header received: ${authHeader.substring(0, 30)}...`);
+  
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer')) {
     try {
-      token = req.headers.authorization.split(' ')[1];
+      token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
       
       const user = await prisma.user.findUnique({
@@ -16,18 +19,24 @@ export const requireAuth = async (req, res, next) => {
       });
 
       if (!user) {
+        console.warn(`[AUTH] 401 - User ID from token not found: ${decoded.id}`);
         return res.status(401).json({ error: 'User not found' });
       }
       
       delete user.passwordHash;
-      req.user = { ...user, _id: user.id }; // Add _id alias for compatibility
-      
+      req.user = { ...user, _id: user.id };
+      console.log(`[AUTH] 200 - Authorized: ${user.email}`);
       next();
     } catch (error) {
-      console.error(error);
+      if (error.code && error.code.startsWith('P')) {
+          console.error(`[AUTH] 500 - Database Connection Error (${error.code}):`, error.message);
+          return res.status(500).json({ error: 'Database connection failed. Check your DATABASE_URL.' });
+      }
+      console.error(`[AUTH] 401 - Token Verification Failed:`, error.message);
       res.status(401).json({ error: 'Not authorized, token failed' });
     }
   } else {
+    console.warn(`[AUTH] 401 - No valid Bearer token found in headers. Keys:`, Object.keys(req.headers));
     res.status(401).json({ error: 'Not authorized, no token' });
   }
 };

@@ -3,11 +3,11 @@ import { cn } from "../../lib/utils";
 import { motion } from "framer-motion";
 
 const buttonVariants = {
-  default: "bg-brand hover:bg-brand/90 text-white shadow-[0_0_20px_var(--color-brand-glow)] hover:shadow-[0_0_30px_var(--color-brand-glow)]",
-  secondary: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
-  outline: "border border-gray-700 bg-transparent hover:bg-gray-800 text-gray-300",
-  ghost: "bg-transparent hover:bg-white/5 text-gray-300",
-  danger: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20",
+  default: "bg-brand hover:bg-brand/90 text-white shadow-sm hover:shadow-md",
+  secondary: "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200",
+  outline: "border border-slate-200 bg-transparent hover:bg-slate-50 text-slate-600",
+  ghost: "bg-transparent hover:bg-slate-100 text-slate-600",
+  danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200",
 };
 
 const buttonSizes = {

@@ -30,6 +30,23 @@ model Organization {
   id                 String       @id @default(uuid())
   name               String
   logoUrl            String?
+  tagline            String?
+  description        String?      @db.Text
+  
+  // Details
+  industry           String?
+  companySize        String?
+  website            String?
+  brandColor         String?      @default("#aa3bff")
+  
+  // Contact
+  contactEmail       String?
+  contactPhone       String?
+  address            String?
+  country            String?
+  state              String?
+  city               String?
+
   subscriptionStatus String       @default("trialing")
   createdAt          DateTime     @default(now())
 

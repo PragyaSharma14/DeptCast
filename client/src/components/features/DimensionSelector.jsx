@@ -18,31 +18,31 @@ export const DimensionSelector = ({ selectedId, onSelect }) => {
               key={dim.id}
               onClick={() => onSelect(dim.id)}
               className={cn(
-                "relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left group overflow-hidden",
+                "relative flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 text-left group overflow-hidden",
                 isSelected 
-                  ? "border-brand bg-brand/10 shadow-[0_0_20px_var(--color-brand-glow)] ring-1 ring-brand/30" 
-                  : "border-white/5 bg-black/20 hover:border-white/20 hover:bg-white/5 text-gray-400"
+                  ? "border-indigo-600 bg-indigo-50 shadow-lg shadow-indigo-600/5 ring-1 ring-indigo-600/20" 
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-400"
               )}
             >
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center transition-colors shrink-0",
-                isSelected ? "bg-brand/20 text-brand" : "bg-white/5 text-gray-500 group-hover:text-gray-300"
+                isSelected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:text-slate-600"
               )}>
                 <dim.icon className="h-6 w-6" />
               </div>
               
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-0.5">
-                    <span className={cn("font-bold text-sm tracking-wide", isSelected ? "text-white" : "text-gray-400")}>{dim.label}</span>
-                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded border leading-none font-mono", isSelected ? "border-brand/30 text-brand bg-brand/5" : "border-white/10 text-gray-600")}>{dim.ratio}</span>
+                <div className="flex items-center justify-between mb-1">
+                    <span className={cn("font-bold text-sm tracking-tight", isSelected ? "text-slate-900" : "text-slate-500")}>{dim.label}</span>
+                    <span className={cn("text-[10px] px-2 py-0.5 rounded-md border leading-none font-black tracking-widest", isSelected ? "border-indigo-200 text-indigo-600 bg-white" : "border-slate-100 text-slate-400 bg-slate-50")}>{dim.ratio}</span>
                 </div>
-                <p className="text-[11px] leading-tight text-gray-500 line-clamp-1">{dim.desc}</p>
+                <p className="text-[11px] font-medium leading-tight text-slate-500 line-clamp-1">{dim.desc}</p>
               </div>
 
               {isSelected && (
                   <motion.div 
                     layoutId="dim-active" 
-                    className="absolute right-0 top-0 bottom-0 w-1 bg-brand" 
+                    className="absolute right-0 top-0 bottom-0 w-1 bg-indigo-600" 
                   />
               )}
             </button>

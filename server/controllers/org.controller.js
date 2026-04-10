@@ -69,18 +69,34 @@ export const createOrg = async (req, res) => {
 };
 
 export const updateOrg = async (req, res) => {
-  const { name, logoUrl } = req.body;
+  const { 
+    name, logoUrl, tagline, description, 
+    industry, companySize, website, brandColor,
+    contactEmail, contactPhone, address, country, state, city
+  } = req.body;
   
   try {
     const updatedOrg = await prisma.organization.update({
       where: { id: req.org.id || req.org._id },
       data: { 
-        ...(name && { name }),
-        ...(logoUrl && { logoUrl })
+        ...(name !== undefined && { name }),
+        ...(logoUrl !== undefined && { logoUrl }),
+        ...(tagline !== undefined && { tagline }),
+        ...(description !== undefined && { description }),
+        ...(industry !== undefined && { industry }),
+        ...(companySize !== undefined && { companySize }),
+        ...(website !== undefined && { website }),
+        ...(brandColor !== undefined && { brandColor }),
+        ...(contactEmail !== undefined && { contactEmail }),
+        ...(contactPhone !== undefined && { contactPhone }),
+        ...(address !== undefined && { address }),
+        ...(country !== undefined && { country }),
+        ...(state !== undefined && { state }),
+        ...(city !== undefined && { city }),
       }
     });
 
-    console.log(`[AUDIT] Organization updated: ${req.org.id || req.org._id} (Changes: ${name ? 'name ' : ''}${logoUrl ? 'logo' : ''})`);
+    console.log(`[AUDIT] Organization metadata updated for ID: ${req.org.id || req.org._id}`);
 
     res.json({ ...updatedOrg, _id: updatedOrg.id });
   } catch (err) {
