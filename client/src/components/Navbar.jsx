@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Video, Home, PlusCircle, Settings, UserCircle, LogOut, ChevronDown } from 'lucide-react';
+import { Video, PlusCircle, Settings, UserCircle, LogOut, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/Button';
 import { useStore } from '../store/useStore';

@@ -5,7 +5,7 @@ import {
     LayoutTemplate, BarChart, Settings, Video,
     Building2, Users, Shield, Briefcase, 
     Factory, Stethoscope, Banknote, GraduationCap,
-    ShoppingBag, Clapperboard, Truck, Home,
+    ShoppingBag, Clapperboard, Truck, Home as HomeIcon,
     Search, ChevronDown, Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -25,7 +25,7 @@ const sectorIconMap = {
     'education-training': GraduationCap,
     'media-entertainment': Clapperboard,
     'logistics-supply-chain': Truck,
-    'real-estate': Home,
+    'real-estate': HomeIcon,
     'consulting-professional-services': Briefcase,
     'government-public-sector': Shield
 };
