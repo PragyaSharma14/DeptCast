@@ -5,6 +5,7 @@ import authRoutes from './auth.routes.js';
 import orgRoutes from './org.routes.js';
 import departmentRoutes from './department.routes.js';
 import sectorRoutes from './sector.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
 import { requireAuth, requireTenant, requireRole } from '../middleware/auth.js';
 import { apiLimiter, authLimiter } from '../middleware/rateLimiter.js';
 
@@ -24,6 +25,7 @@ router.get("/health", (req, res) => {
 router.use('/orgs', orgRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/sectors', sectorRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Protect existing routes with RBAC (Creator/Admin only for modifying projects)
 // GETs are allowed for viewers, POST/PUT/DELETE would require 'member' or 'admin'

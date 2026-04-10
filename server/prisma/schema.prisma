@@ -37,6 +37,8 @@ model Organization {
   projects           Project[]
   memberships        Membership[]
   invitations        Invitation[]
+  schedules          CommunicationSchedule[]
+  analytics          AnalyticsSnapshot?
 }
 
 model Project {
@@ -59,6 +61,7 @@ model Project {
   createdAt      DateTime     @default(now())
 
   scenes         Scene[]
+  schedules      CommunicationSchedule[]
 }
 
 model Sector {
@@ -141,4 +144,27 @@ model Membership {
   joinedAt       DateTime     @default(now())
 
   @@unique([userId, organizationId])
+}
+
+model CommunicationSchedule {
+  id             String       @id @default(uuid())
+  title          String
+  scheduledAt    DateTime
+  status         String       @default("scheduled") // scheduled, sent, missed
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  projectId      String?
+  project        Project?     @relation(fields: [projectId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model AnalyticsSnapshot {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  totalReach     Int          @default(0)
+  engagementRate Float        @default(0.0)
+  totalVideos    Int          @default(0)
+  activeUsers    Int          @default(0)
+  updatedAt      DateTime     @updatedAt
 }

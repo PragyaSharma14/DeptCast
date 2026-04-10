@@ -64,7 +64,8 @@ export const generateVideo = async (req, res) => {
                     if (dbTemplate) templateContext = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
                 }
 
-                const autogenRes = await fetch('http://localhost:8000/generate-master-shot', {
+                const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+                const autogenRes = await fetch(`${autogenUrl}/generate-master-shot`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

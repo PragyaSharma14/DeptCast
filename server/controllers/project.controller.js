@@ -32,8 +32,8 @@ export const createProject = async (req, res) => {
             }
         });
 
-        console.log("Generating Structured Scenes via AutoGen (GPT-4o) Microservice...");
-        const response = await fetch('http://localhost:8000/generate-script', {
+        const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const response = await fetch(`${autogenUrl}/generate-script`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -38,6 +38,11 @@ export const getTemplatesByDepartment = (deptId) => api.get(`/departments/${dept
 export const getSectors = () => api.get('/sectors').then(res => res.data);
 export const getDepartmentsBySector = (sectorId) => api.get(`/sectors/${sectorId}/departments`).then(res => res.data);
 
+// Dashboard APIs
+export const getDashboardStats = () => api.get('/dashboard/stats').then(res => res.data);
+export const getDashboardSchedules = () => api.get('/dashboard/schedules').then(res => res.data);
+export const createDashboardSchedule = (data) => api.post('/dashboard/schedules', data).then(res => res.data);
+
 // Auth & Tenant APIs
 export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
 export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);
