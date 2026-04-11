@@ -16,7 +16,7 @@ export const generateBlueprint = async (req, res) => {
         }
 
         const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
-        const response = await fetch(`${autogenUrl}/generate-script`, {
+        const response = await fetch(`${autogenUrl}/generate-blueprint-text`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -35,12 +35,7 @@ export const generateBlueprint = async (req, res) => {
 
         const result = await response.json();
         
-        // We return a structured blueprint text (summary of scenes/intent)
-        const blueprintText = result.scenes.map(s => 
-            `SCENE ${s.sceneNumber}: ${s.description}\n`
-        ).join('\n');
-
-        res.json({ blueprint: blueprintText });
+        res.json({ blueprint: result.blueprint || "Failed to parse blueprint." });
     } catch (error) {
         console.error("Generate Blueprint Error:", error);
         res.status(500).json({ error: error.message });

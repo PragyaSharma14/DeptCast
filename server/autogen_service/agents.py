@@ -108,3 +108,70 @@ Your job is to review the Director's JSON output.
         final_output = [{"sceneNumber": 1, "description": "Fallback scene", "prompt": f"A standard corporate video for {department}."}]
 
     return final_output
+
+def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str) -> str:
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if not groq_api_key:
+        raise ValueError("GROQ_API_KEY is not defined in the environment.")
+
+    config_list = [{
+        "model": "llama-3.3-70b-versatile",
+        "api_key": groq_api_key,
+        "base_url": "https://api.groq.com/openai/v1"
+    }]
+
+    llm_config = {
+        "config_list": config_list,
+        "temperature": 0.7,
+    }
+
+    system_message = f"""You are the Creative Director for a corporate video.
+Current Constraints:
+- Department Topic: {department}
+- System Prompt / Template Override: {template}
+- Video Dimension: {dimension}
+- Required Visual Style: {style.upper()}
+
+Task: Take the User's core idea and write a structured "Strategic Video Blueprint".
+Format it strictly exactly like this (use markdown):
+
+### Video Objective
+(1-2 sentences on exactly what this video will accomplish)
+
+### Key Content to Cover
+- (Bullet point the specific details, user-provided data, rules, and facts mentioned in the prompt)
+- (Ensure user-specific details are heavily emphasized here so the animation/scene backend won't miss them)
+
+### Visual & Tonal Trajectory
+(A paragraph describing the aesthetic, mood, lighting, and pacing based on the {style.upper()} style)
+
+CRITICAL RULES:
+- DO NOT write a scene-by-scene script or use words like "Scene 1". 
+- Return ONLY the formatted markdown blueprint. No conversational filler or introductory text.
+"""
+
+    agent = autogen.AssistantAgent(
+        name="CreativeDirector",
+        system_message=system_message,
+        llm_config=llm_config,
+    )
+
+    user_proxy = autogen.UserProxyAgent(
+        name="UserProxy",
+        human_input_mode="NEVER",
+        code_execution_config=False,
+        max_consecutive_auto_reply=0
+    )
+
+    initial_message = f"Please draft the strategic video blueprint for the following concept: {user_prompt}"
+
+    res = user_proxy.initiate_chat(agent, message=initial_message)
+    
+    # Extract the last message from the agent
+    final_text = "Video blueprint generation failed."
+    for msg in reversed(user_proxy.chat_messages[agent]):
+        if msg.get("role") == "assistant" or msg.get("name") == "CreativeDirector":
+            final_text = msg.get("content", "").strip()
+            break
+
+    return final_text

@@ -26,7 +26,7 @@ export const Company = () => {
         industry: '',
         companySize: '',
         website: '',
-        brandColor: '#aa3bff',
+        brandColor: '#2563eb',
         contactEmail: '',
         contactPhone: '',
         address: '',
@@ -54,7 +54,7 @@ export const Company = () => {
                     industry: org.industry || '',
                     companySize: org.companySize || '',
                     website: org.website || '',
-                    brandColor: org.brandColor || '#aa3bff',
+                    brandColor: org.brandColor || '#2563eb',
                     contactEmail: org.contactEmail || '',
                     contactPhone: org.contactPhone || '',
                     address: org.address || '',
@@ -96,40 +96,40 @@ export const Company = () => {
     if (loading) return (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
             <Loader2 className="animate-spin text-brand" size={40} />
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Synchronizing Identity...</p>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing Identity...</p>
         </div>
     );
 
     const SectionHeader = ({ icon: Icon, title, subtitle }) => (
         <div className="flex items-start gap-4 mb-8">
-            <div className="p-3 bg-brand/10 rounded-2xl border border-brand/20">
+            <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100">
                 <Icon className="text-brand" size={20} />
             </div>
             <div>
-                <h3 className="text-xl font-heading font-black text-white leading-none">{title}</h3>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1.5">{subtitle}</p>
+                <h3 className="text-xl font-heading font-bold text-slate-900 leading-none">{title}</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1.5">{subtitle}</p>
             </div>
         </div>
     );
 
     return (
-        <div className="max-w-4xl mx-auto pb-20">
-            <div className="sticky top-0 z-20 -mx-4 px-4 py-4 bg-dark/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between mb-8">
+        <div className="max-w-4xl mx-auto pb-20 font-sans">
+            <div className="sticky top-0 z-20 -mx-4 px-4 py-4 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between mb-8 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand to-purple-600 flex items-center justify-center shadow-lg shadow-brand/20">
-                        <Building2 className="text-white" size={24} />
+                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <Building2 className="text-brand" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-heading font-black text-white">Company Setup</h1>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Workspace configuration</p>
+                        <h1 className="text-2xl font-heading font-bold text-slate-900">Company Setup</h1>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Workspace configuration</p>
                     </div>
                 </div>
                 <Button 
                     onClick={handleSave} 
                     disabled={saving}
-                    className="rounded-2xl px-8 h-12 shadow-xl shadow-brand/20"
+                    className="rounded-xl px-8 h-10 shadow-sm active:scale-95 btn-primary text-xs"
                 >
-                    {saving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save className="mr-2" size={18} />}
+                    {saving ? <Loader2 className="animate-spin mr-2" size={16} /> : <Save className="mr-2" size={16} />}
                     Save Changes
                 </Button>
             </div>
@@ -137,39 +137,39 @@ export const Company = () => {
             <div className="space-y-8">
                 <motion.section 
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="glass-panel p-8"
+                    className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm"
                 >
                     <SectionHeader icon={Building2} title="Company Identity" subtitle="Branding and visibility across DeptCast" />
                     
                     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-10">
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block ml-1">Company Logo</label>
-                            <div className="group relative w-full aspect-square bg-white/5 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-brand/40 hover:bg-brand/5 transition-all">
-                                <Upload className="text-gray-600 group-hover:text-brand transition-colors" size={32} />
-                                <span className="text-[10px] font-black text-gray-600 group-hover:text-brand uppercase tracking-widest">Upload Image</span>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block ml-1">Company Logo</label>
+                            <div className="group relative w-full aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-brand hover:bg-blue-50 transition-all">
+                                <Upload className="text-slate-400 group-hover:text-brand transition-colors" size={32} />
+                                <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand uppercase tracking-widest">Upload Image</span>
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-white flex items-center gap-1">Company Name <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">Company Name <span className="text-red-500">*</span></label>
                                 <input 
                                     type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                                    className="glass-input" placeholder="e.g. Acme Corp"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="e.g. Acme Corp"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-white">Tagline / Slogan</label>
+                                <label className="text-xs font-bold text-slate-700">Tagline / Slogan</label>
                                 <input 
                                     type="text" value={formData.tagline} onChange={e => setFormData({...formData, tagline: e.target.value})}
-                                    className="glass-input" placeholder="e.g. Delivering Excellence, Every Day"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="e.g. Delivering Excellence, Every Day"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-white">About the Company</label>
+                                <label className="text-xs font-bold text-slate-700">About the Company</label>
                                 <textarea 
                                     rows={4} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
-                                    className="glass-input resize-none" placeholder="Brief description of what your company does..."
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all resize-none" placeholder="Brief description of what your company does..."
                                 />
                             </div>
                         </div>
@@ -178,59 +178,59 @@ export const Company = () => {
 
                 <motion.section 
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="glass-panel p-8"
+                    className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm"
                 >
                     <SectionHeader icon={Globe} title="Organisation Details" subtitle="Industry, size, and segmentation" />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Industry <span className="text-red-500">*</span></label>
+                            <label className="text-xs font-bold text-slate-700">Industry <span className="text-red-500">*</span></label>
                             <div className="relative group">
                                 <select 
                                     value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})}
-                                    className="glass-input appearance-none pr-10"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all appearance-none pr-10 cursor-pointer"
                                 >
-                                    <option value="" disabled className="bg-darker">Select industry...</option>
-                                    {sectors.map(s => <option key={s.id} value={s.name} className="bg-darker">{s.name}</option>)}
+                                    <option value="" disabled>Select industry...</option>
+                                    {sectors.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                                 </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover:text-brand transition-colors" size={18} />
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-brand transition-colors" size={18} />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Company Size</label>
+                            <label className="text-xs font-bold text-slate-700">Company Size</label>
                             <div className="relative group">
                                 <select 
                                     value={formData.companySize} onChange={e => setFormData({...formData, companySize: e.target.value})}
-                                    className="glass-input appearance-none pr-10"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all appearance-none pr-10 cursor-pointer"
                                 >
-                                    <option value="" disabled className="bg-darker">Select size...</option>
-                                    <option value="1-10" className="bg-darker">1-10 employees</option>
-                                    <option value="11-50" className="bg-darker">11-50 employees</option>
-                                    <option value="51-200" className="bg-darker">51-200 employees</option>
-                                    <option value="201-500" className="bg-darker">201-500 employees</option>
-                                    <option value="500+" className="bg-darker">500+ employees</option>
+                                    <option value="" disabled>Select size...</option>
+                                    <option value="1-10">1-10 employees</option>
+                                    <option value="11-50">11-50 employees</option>
+                                    <option value="51-200">51-200 employees</option>
+                                    <option value="201-500">201-500 employees</option>
+                                    <option value="500+">500+ employees</option>
                                 </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover:text-brand transition-colors" size={18} />
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-brand transition-colors" size={18} />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Website</label>
+                            <label className="text-xs font-bold text-slate-700">Website</label>
                             <div className="relative group flex items-center">
-                                <Globe2 className="absolute left-4 text-gray-500" size={18} />
+                                <Globe2 className="absolute left-4 text-slate-400" size={18} />
                                 <input 
                                     type="url" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})}
-                                    className="glass-input pl-12" placeholder="https://www.yourcompany.com"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="https://www.yourcompany.com"
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Brand Colour</label>
+                            <label className="text-xs font-bold text-slate-700">Brand Colour</label>
                             <div className="flex gap-2">
                                 <div className="relative group flex items-center flex-1">
-                                    <div className="absolute left-4 w-5 h-5 rounded-md border border-white/20" style={{ backgroundColor: formData.brandColor }} />
+                                    <div className="absolute left-4 w-5 h-5 rounded-md border border-slate-200" style={{ backgroundColor: formData.brandColor }} />
                                     <input 
                                         type="text" value={formData.brandColor} onChange={e => setFormData({...formData, brandColor: e.target.value})}
-                                        className="glass-input pl-12" placeholder="#aa3bff"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="#2563eb"
                                     />
                                 </div>
                                 <input 
@@ -244,50 +244,50 @@ export const Company = () => {
 
                 <motion.section 
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="glass-panel p-8"
+                    className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm"
                 >
                     <SectionHeader icon={Mail} title="Contact Information" subtitle="Primary contact channels" />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Contact Email</label>
+                            <label className="text-xs font-bold text-slate-700">Contact Email</label>
                             <input 
                                 type="email" value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})}
-                                className="glass-input" placeholder="hr@yourcompany.com"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="hr@yourcompany.com"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Phone Number</label>
+                            <label className="text-xs font-bold text-slate-700">Phone Number</label>
                             <input 
                                 type="tel" value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})}
-                                className="glass-input" placeholder="+91 98765 43210"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="+91 98765 43210"
                             />
                         </div>
                         <div className="sm:col-span-2 space-y-2">
-                            <label className="text-sm font-bold text-white">Office Address</label>
+                            <label className="text-xs font-bold text-slate-700">Office Address</label>
                             <input 
                                 type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})}
-                                className="glass-input" placeholder="Street address, building, floor"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="Street address, building, floor"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">Country</label>
-                            <select className="glass-input appearance-none bg-darker" value={formData.country} disabled>
+                            <label className="text-xs font-bold text-slate-700">Country</label>
+                            <select className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 font-medium text-sm transition-all appearance-none" value={formData.country} disabled>
                                 <option>India</option>
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">State</label>
+                            <label className="text-xs font-bold text-slate-700">State</label>
                             <input 
                                 type="text" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})}
-                                className="glass-input" placeholder="Select state..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="Select state..."
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-white">City</label>
+                            <label className="text-xs font-bold text-slate-700">City</label>
                             <input 
                                 type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})}
-                                className="glass-input" placeholder="Select city..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand font-medium text-sm transition-all" placeholder="Select city..."
                             />
                         </div>
                     </div>
@@ -295,22 +295,22 @@ export const Company = () => {
 
                 <motion.section 
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                    className="glass-panel p-8"
+                    className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm"
                 >
                     <div className="flex items-start justify-between mb-8">
                         <div className="flex items-start gap-4">
-                            <div className="p-3 bg-brand/10 rounded-2xl border border-brand/20">
+                            <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100">
                                 <Layers className="text-brand" size={20} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-heading font-black text-white leading-none">Select Departments</h3>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1.5">Map your organization structure</p>
+                                <h3 className="text-xl font-heading font-bold text-slate-900 leading-none">Select Departments</h3>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">Map your organization structure</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
                             <span className="text-brand">{selectedDepts.length} selected</span>
-                            <button className="text-gray-500 hover:text-white transition-colors" onClick={() => setSelectedDepts(departments.map(d => d.id))}>Select All</button>
-                            <button className="text-gray-500 hover:text-white transition-colors" onClick={() => setSelectedDepts([])}>Clear</button>
+                            <button className="text-slate-400 hover:text-slate-700 transition-colors" onClick={() => setSelectedDepts(departments.map(d => d.id))}>Select All</button>
+                            <button className="text-slate-400 hover:text-slate-700 transition-colors" onClick={() => setSelectedDepts([])}>Clear</button>
                         </div>
                     </div>
 
@@ -326,32 +326,32 @@ export const Company = () => {
                                             : setSelectedDepts([...selectedDepts, dept.id])
                                         }
                                         className={cn(
-                                            "p-4 rounded-2xl border transition-all text-left flex flex-col gap-2 group",
+                                            "p-4 rounded-xl border transition-all text-left flex flex-col gap-2 group",
                                             active 
-                                                ? "bg-brand/10 border-brand/40 shadow-lg shadow-brand/5" 
-                                                : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
+                                                ? "bg-blue-50 border-brand shadow-sm" 
+                                                : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                                         )}
                                     >
                                         <div className={cn(
                                             "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                                            active ? "bg-brand text-white" : "bg-white/10 text-gray-500 group-hover:bg-white/20 group-hover:text-white"
+                                            active ? "bg-brand text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600"
                                         )}>
                                             <Briefcase size={16} />
                                         </div>
                                         <span className={cn(
-                                            "text-[11px] font-black uppercase tracking-wider",
-                                            active ? "text-white" : "text-gray-400 group-hover:text-white"
+                                            "text-xs font-bold tracking-tight",
+                                            active ? "text-slate-900" : "text-slate-500 group-hover:text-slate-700"
                                         )}>{dept.name}</span>
                                     </button>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-white/5 border border-dashed border-white/10 rounded-3xl">
-                            <Layers className="text-gray-700 opacity-20" size={48} />
+                        <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
+                            <Layers className="text-slate-300" size={48} />
                             <div>
-                                <p className="text-gray-500 font-bold">No departments to display</p>
-                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-1">Select an Industry from the Organization Details section above</p>
+                                <p className="text-slate-500 font-bold">No departments to display</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Select an Industry from the Organization Details section above</p>
                             </div>
                         </div>
                     )}
@@ -360,9 +360,9 @@ export const Company = () => {
                 <div className="flex justify-end pt-4">
                     <Button 
                         size="lg" onClick={handleSave} disabled={saving}
-                        className="rounded-2xl px-12 py-6 h-auto shadow-2xl shadow-brand/20 text-lg"
+                        className="rounded-2xl px-12 py-5 h-auto shadow-md text-sm font-bold bg-brand text-white active:scale-95 transition-all"
                     >
-                        {saving ? <Loader2 className="animate-spin mr-3" size={24} /> : <CheckCircle2 className="mr-3" size={24} />}
+                        {saving ? <Loader2 className="animate-spin mr-3" size={20} /> : <CheckCircle2 className="mr-3" size={20} />}
                         Save Company Setup
                     </Button>
                 </div>

@@ -1,66 +1,112 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { createProject } from '../../services/api';
-import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-const LOADING_STEPS = [
-  "Synthesizing Master Blueprint...",
-  "Synchronizing Strategic Intent...",
-  "Compiling Visual Assets...",
-  "Executing Render Protocol...",
-  "Finalizing Production Masterpiece..."
-];
+import { createProject, generateBlueprint } from '../../services/api';
+import { Loader2, Sparkles, CheckCircle2, Wand2, ArrowRight, ArrowLeft, Save, Layout } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Button } from '../../components/ui/Button';
 
 export const Produce = () => {
   const [, setLocation] = useLocation();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+  
+  const [masterPrompt, setMasterPrompt] = useState("");
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    // Cycle through professional milestones
-    const stepInterval = setInterval(() => {
-      setCurrentStep(prev => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
-    }, 2800);
-
-    const generate = async () => {
+    const initScript = async () => {
       try {
         const configStr = localStorage.getItem('deptcast_pending_config');
         if (!configStr) throw new Error("No configuration found. Please start over.");
         
-        const config = JSON.parse(configStr);
-        // Backend handles the blueprint execution silently
-        const result = await createProject(config);
-        const projectId = result.project?._id || result.project?.id;
-
-        if (projectId) {
-            try {
-                const { generateVideo: triggerGeneration } = await import('../../services/api');
-                await triggerGeneration(projectId);
-            } catch (genErr) {
-                console.warn("Auto-generation trigger failed:", genErr);
-            }
-
-            localStorage.removeItem('deptcast_pending_config');
-            setLocation(`/videos/${projectId}`);
-        } else {
-            throw new Error("Invalid response from server");
-        }
+        const parsedConfig = JSON.parse(configStr);
+        setConfig(parsedConfig);
+        
+        // Fetch the AI generated master prompt based on config
+        const result = await generateBlueprint({
+            department: parsedConfig.department,
+            templateId: parsedConfig.templateId,
+            style: parsedConfig.style,
+            quality: parsedConfig.quality,
+            dimension: parsedConfig.dimension,
+            additionalPrompt: parsedConfig.additionalPrompt
+        });
+        
+        setMasterPrompt(result.blueprint || result.prompt || "Strategic AI Blueprint failed to load. Please write your prompt here.");
       } catch (err) {
-        console.error(err);
-        const errorData = err.response?.data;
-        if (errorData?.code === 'CREDITS_EXHAUSTED' || errorData?.status === 402) {
-          setError("Strategic Quota Exceeded: Your enterprise credit allocation has been reached. Please contact administration.");
-        } else {
-          setError("Blueprint Execution Interrupted. Ensure connectivity and check project parameters.");
-        }
+        console.error("AI Magic failed:", err);
+        // Fallback
+        setMasterPrompt("Error synthesizing master prompt. You can write your instructions manually here.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    generate();
+    initScript();
+  }, []);
 
-    return () => clearInterval(stepInterval);
-  }, [setLocation]);
+  const handleCreateVideo = async () => {
+      if(!config) return;
+      setGenerating(true);
+      try {
+          // Construct the final prompt matching Sora format if needed
+          const finalPrompt = `[Style: ${config.style}, Quality: ${config.quality}, Ratio: ${config.dimension}]\n\n${masterPrompt}`;
+          
+          const finalConfig = {
+              ...config,
+              additionalPrompt: finalPrompt,
+          };
+          
+          const result = await createProject(finalConfig);
+          const projectId = result.project?._id || result.project?.id;
+
+          if (projectId) {
+              try {
+                  const { generateVideo: triggerGeneration } = await import('../../services/api');
+                  await triggerGeneration(projectId);
+              } catch (genErr) {
+                  console.warn("Auto-generation trigger failed:", genErr);
+              }
+
+              localStorage.removeItem('deptcast_pending_config');
+              setLocation(`/videos/${projectId}`);
+          } else {
+              throw new Error("Invalid response from server");
+          }
+      } catch (err) {
+          console.error(err);
+          const errorData = err.response?.data;
+          if (errorData?.code === 'CREDITS_EXHAUSTED' || errorData?.status === 402) {
+            setError("Strategic Quota Exceeded: Your enterprise credit allocation has been reached. Please contact administration.");
+          } else {
+            setError("Blueprint Execution Interrupted. Ensure connectivity and check project parameters.");
+          }
+          setGenerating(false);
+      }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-lg mx-auto space-y-12 relative px-6">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vh] bg-blue-50/40 blur-[120px] rounded-full pointer-events-none -z-10" />
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="relative"
+        >
+          <div className="absolute inset-x-[-20%] inset-y-[-20%] bg-brand/10 blur-3xl rounded-full" />
+          <div className="relative bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-brand/5 ring-1 ring-slate-100">
+            <Sparkles className="h-16 w-16 text-brand" />
+          </div>
+        </motion.div>
+        <div className="space-y-4 w-full">
+            <h2 className="text-3xl font-heading font-bold text-slate-900 tracking-tight">AI Magic in Progress</h2>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand animate-pulse">Drafting Strategic Blueprint...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -74,7 +120,7 @@ export const Produce = () => {
         </div>
         <button 
           onClick={() => setLocation('/videos/new')}
-          className="mt-4 px-8 py-3 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-600 rounded-2xl transition-all font-black text-xs uppercase tracking-widest shadow-sm"
+          className="mt-4 px-8 py-3 bg-white border border-slate-200 hover:border-brand hover:text-brand rounded-2xl transition-all font-bold text-xs uppercase tracking-widest shadow-sm"
         >
           Return to Studio
         </button>
@@ -83,62 +129,92 @@ export const Produce = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-lg mx-auto space-y-12 relative px-6">
-      
-      {/* Background Ambience */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vh] bg-indigo-50/40 blur-[120px] rounded-full pointer-events-none -z-10" />
+    <div className="max-w-5xl mx-auto pb-32 font-sans text-slate-800">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[40vh] bg-blue-50/50 blur-[150px] rounded-[100%] pointer-events-none -z-10" />
 
-      <motion.div
-        animate={{ 
-          scale: [1, 1.05, 1],
-          opacity: [0.8, 1, 0.8]
-        }}
-        transition={{ 
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="relative"
+      {/* Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-center justify-between mb-8 sm:mt-10 relative z-10 gap-6"
       >
-        <div className="absolute inset-x-[-20%] inset-y-[-20%] bg-indigo-600/10 blur-3xl rounded-full" />
-        <div className="relative bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-indigo-600/5 ring-1 ring-slate-100">
-          <Sparkles className="h-20 w-20 text-indigo-600" />
+        <div className="flex items-center gap-5">
+          <button 
+            onClick={() => setLocation('/videos/new')}
+            className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-400 hover:text-brand transition-all shadow-sm border border-slate-200"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Step 2: AI Magic</span>
+            </div>
+            <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">Review Strategic Blueprint</h1>
+          </div>
         </div>
       </motion.div>
 
-      <div className="space-y-6 w-full">
-        <div className="space-y-2">
-            <h2 className="text-4xl font-heading font-black text-slate-900 tracking-tight">Executing Strategic Blueprint</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Advanced AI Synthesis in Progress</p>
-        </div>
-        
-        <div className="h-16 relative overflow-hidden flex items-center justify-center">
-          <AnimatePresence mode="popLayout">
-            <motion.p
-              key={currentStep}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-indigo-600 text-lg font-black absolute w-full text-center"
-            >
-              {LOADING_STEPS[currentStep]}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-
-        <div className="max-w-xs mx-auto space-y-4">
-            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200 p-0.5">
-              <motion.div 
-                className="h-full bg-indigo-600 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${((currentStep + 1) / LOADING_STEPS.length) * 100}%` }}
-                transition={{ duration: 0.8, ease: "circOut" }}
-              />
+      <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: 0.1 }}>
+        <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm relative z-20 flex flex-col h-[600px] overflow-hidden">
+            
+            {/* Editor Top Bar */}
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center">
+                        <Layout className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-sm text-slate-900">Strategic Blueprint</h3>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Creative Direction Setup</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                        <CheckCircle2 size={12} className="text-emerald-500" /> Saved
+                    </span>
+                </div>
             </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Efficiency Optimized for Enterprise</p>
+
+            {/* Editing Area */}
+            <div className="flex-1 p-6 bg-slate-50/30">
+                <textarea
+                    value={masterPrompt}
+                    onChange={(e) => setMasterPrompt(e.target.value)}
+                    className="w-full h-full bg-white border border-slate-200 rounded-xl p-6 text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all resize-none font-medium leading-relaxed text-base shadow-inner"
+                    placeholder="Describe your video's visual trajectory here..."
+                />
+            </div>
+            
+            {/* Config Info Bar */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-6">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Quality</span>
+                        <span className="text-sm font-semibold text-slate-700">{config?.quality || '4K'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Style</span>
+                        <span className="text-sm font-semibold text-slate-700">{config?.style || 'Hyper-Realistic'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Duration</span>
+                        <span className="text-sm font-semibold text-slate-700">{config?.targetDuration || '16'}s</span>
+                    </div>
+                </div>
+                
+                <Button 
+                    size="lg"
+                    onClick={handleCreateVideo}
+                    disabled={generating || !masterPrompt}
+                    className="bg-brand text-white shadow-md active:scale-95 border-none font-bold text-sm rounded-xl px-8 h-12 btn-primary"
+                >
+                    {generating ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                    {generating ? 'Submitting to Sora...' : 'Submit & Generate'}
+                </Button>
+            </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

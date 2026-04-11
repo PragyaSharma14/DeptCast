@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from agents import run_autogen_workflow
+from agents import run_autogen_workflow, run_autogen_blueprint
 from cinematographer import run_autogen_cinematographer
 
 app = FastAPI(title="DeptCast AutoGen Microservice")
@@ -51,6 +51,25 @@ async def generate_master_shot(req: MasterShotRequest):
         return {"status": "success", "master_prompt": master_prompt}
     except Exception as e:
         print(f"Error in Cinematographer workflow: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-blueprint-text")
+async def generate_blueprint_text(req: VideoGenerationRequest):
+    try:
+        print(f"Received blueprint text request for {req.department} with prompt: {req.prompt}")
+        blueprint = run_autogen_blueprint(
+            department=req.department,
+            style=req.style,
+            template=req.template,
+            dimension=req.dimension,
+            user_prompt=req.prompt
+        )
+        return {"status": "success", "blueprint": blueprint}
+    except Exception as e:
+        error_msg = str(e).lower()
+        print(f"Error in AutoGen blueprint workflow: {str(e)}")
+        if any(keyword in error_msg for keyword in ["quota", "credit", "limit", "rate limit", "balance"]):
+            raise HTTPException(status_code=402, detail="AI Quota Exceeded: Please check your API credits/limits.")
         raise HTTPException(status_code=500, detail=str(e))
 
 import os
