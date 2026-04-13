@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from agents import run_autogen_workflow, run_autogen_blueprint
 from cinematographer import run_autogen_cinematographer
+import os
 
 app = FastAPI(title="DeptCast AutoGen Microservice")
 
@@ -19,7 +20,15 @@ class MasterShotRequest(BaseModel):
     style: str
     template: str
 
-@app.post("/generate-script")
+async def verify_api_key(x_api_secret: str = Header(None)):
+    expected_secret = os.getenv("AUTOGEN_SECRET")
+    # If no secret is set in env, we allow it (for local dev dev)
+    # But if it is set, we must match it
+    if expected_secret and x_api_secret != expected_secret:
+        raise HTTPException(status_code=403, detail="Unauthorized: Invalid or missing API Secret.")
+    return x_api_secret
+
+@app.post("/generate-script", dependencies=[Depends(verify_api_key)])
 async def generate_script(req: VideoGenerationRequest):
     try:
         print(f"Received request for {req.department} with prompt: {req.prompt}")
@@ -38,7 +47,7 @@ async def generate_script(req: VideoGenerationRequest):
             raise HTTPException(status_code=402, detail="AI Quota Exceeded: Please check your API credits/limits.")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate-master-shot")
+@app.post("/generate-master-shot", dependencies=[Depends(verify_api_key)])
 async def generate_master_shot(req: MasterShotRequest):
     try:
         print(f"Received master shot request for {len(req.scenes)} scenes.")
@@ -53,7 +62,7 @@ async def generate_master_shot(req: MasterShotRequest):
         print(f"Error in Cinematographer workflow: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate-blueprint-text")
+@app.post("/generate-blueprint-text", dependencies=[Depends(verify_api_key)])
 async def generate_blueprint_text(req: VideoGenerationRequest):
     try:
         print(f"Received blueprint text request for {req.department} with prompt: {req.prompt}")
@@ -72,7 +81,7 @@ async def generate_blueprint_text(req: VideoGenerationRequest):
             raise HTTPException(status_code=402, detail="AI Quota Exceeded: Please check your API credits/limits.")
         raise HTTPException(status_code=500, detail=str(e))
 
-import os
+
 
 if __name__ == "__main__":
     import uvicorn

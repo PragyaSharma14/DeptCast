@@ -18,7 +18,10 @@ export const generateBlueprint = async (req, res) => {
         const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
         const response = await fetch(`${autogenUrl}/generate-blueprint-text`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+            },
             body: JSON.stringify({
                 prompt: additionalPrompt || "Standard template generation.",
                 department: department || 'General',
@@ -74,7 +77,10 @@ export const createProject = async (req, res) => {
         const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
         const response = await fetch(`${autogenUrl}/generate-script`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+            },
             body: JSON.stringify({
                 prompt: initialIntent,
                 department: department || 'General',

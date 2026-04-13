@@ -67,7 +67,10 @@ export const generateVideo = async (req, res) => {
                 const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
                 const autogenRes = await fetch(`${autogenUrl}/generate-master-shot`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+                    },
                     body: JSON.stringify({
                         scenes: scenes.map(s => ({ sceneNumber: s.sceneNumber, description: s.description })),
                         dimension: project.dimension || "16:9",

@@ -28,7 +28,6 @@ export const Produce = () => {
             department: parsedConfig.department,
             templateId: parsedConfig.templateId,
             style: parsedConfig.style,
-            quality: parsedConfig.quality,
             dimension: parsedConfig.dimension,
             additionalPrompt: parsedConfig.additionalPrompt
         });
@@ -51,7 +50,7 @@ export const Produce = () => {
       setGenerating(true);
       try {
           // Construct the final prompt matching Sora format if needed
-          const finalPrompt = `[Style: ${config.style}, Quality: ${config.quality}, Ratio: ${config.dimension}]\n\n${masterPrompt}`;
+          const finalPrompt = `[Style: ${config.style}, Ratio: ${config.dimension}]\n\n${masterPrompt}`;
           
           const finalConfig = {
               ...config,
@@ -189,10 +188,7 @@ export const Produce = () => {
             {/* Config Info Bar */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-6">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Quality</span>
-                        <span className="text-sm font-semibold text-slate-700">{config?.quality || '4K'}</span>
-                    </div>
+
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Style</span>
                         <span className="text-sm font-semibold text-slate-700">{config?.style || 'Hyper-Realistic'}</span>

@@ -22,7 +22,6 @@ export const NewVideoWizard = () => {
     department: '',
     templateId: '',
     style: 'Hyper-Realistic', // Character/Style
-    quality: '4K',
     dimension: '16:9',
     targetDuration: 16,
     additionalPrompt: ''
@@ -271,7 +270,7 @@ export const NewVideoWizard = () => {
               <h2 className="text-xl font-heading font-bold text-slate-900">Style Options</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+            <div className="grid grid-cols-1 md:grid-cols-1 max-w-xl gap-6 relative">
                  {/* Character Type */}
                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Character Style</p>
@@ -287,26 +286,6 @@ export const NewVideoWizard = () => {
                              >
                                  <UserCheck size={20} />
                                  <span className="text-sm">{style}</span>
-                             </button>
-                         ))}
-                     </div>
-                 </div>
-
-                 {/* Rendering Quality */}
-                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Rendering Quality</p>
-                     <div className="grid grid-cols-3 gap-3">
-                         {['SD', 'HD', '4K'].map((qual) => (
-                             <button
-                                 key={qual}
-                                 onClick={() => setConfig({...config, quality: qual})}
-                                 className={cn(
-                                     "p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all",
-                                     config.quality === qual ? "border-brand bg-blue-50 text-brand font-bold" : "border-slate-200 text-slate-600 hover:border-slate-300 font-medium"
-                                 )}
-                             >
-                                 <Monitor size={20} />
-                                 <span className="text-sm">{qual}</span>
                              </button>
                          ))}
                      </div>

@@ -5,7 +5,7 @@ This document maps out the end-to-end backend orchestration, database interactio
 ## 🌟 The Core Pipeline
 
 The architecture is built around three major asynchronous phases:
-1.  **Ingestion & State Creation:** Capturing user intents via React and pushing the initial job specs into the MySQL database.
+1.  **Ingestion & State Creation:** Capturing user intents via React and pushing the initial job specs into the PostgreSQL database.
 2.  **AI Script Orchestration:** Disengaging the Node.js main thread to let the `AutoGen` Python microservice run a multi-agent `GroupChat`. The Groq-powered agents iterate to write the perfect cinematic "Master Shot" prompt based on the user's input constraints.
 3.  **Video Generation:** Node.js takes the validated Master Prompt and ships it to OpenAI Sora for rendering. It manages a simplified asynchronous polling strategy to monitor the generation until completion.
 
@@ -21,7 +21,7 @@ sequenceDiagram
     
     actor Client as React Frontend (Zustand)
     participant NodeServer as Node.js Backend (Express)
-    participant DB as MySQL DB (Prisma ORM)
+    participant DB as PostgreSQL DB (Prisma ORM)
     
     box rgb(40, 40, 60) AutoGen Python Microservice (FastAPI)
         participant UserProxy as UserProxy Agent
@@ -76,7 +76,7 @@ sequenceDiagram
 
 ### 1. Main Orchestrator (Node.js & Express)
 > **Location**: `/server`
-> **Stack**: Node.js, Express, Prisma ORM, MySQL, OpenAI SDK.
+> **Stack**: Node.js, Express, Prisma ORM, PostgreSQL, OpenAI SDK.
 - **Role**: This system holds the absolute source of truth. It coordinates the hand-off between AutoGen and OpenAI.
 - **Simplified Pipeline**: Previous Google Veo "stretching" (looping for +7s segments) has been replaced by a single contiguous Sora request, drastically reducing complexity and credit waste.
 
@@ -88,7 +88,7 @@ sequenceDiagram
   - **The Director** specializes in cinematic syntax specifically optimized for Sora's high-fidelity parameters.
   - **The Critic** ensures the specific avatar and dimensions are locked in before submission.
 
-### 3. State Management (MySQL / Prisma)
+### 3. State Management (PostgreSQL / Prisma)
 > **Location**: `/server/prisma/schema.prisma`
 - **Role**: Persists all multi-stage transactions. 
 
