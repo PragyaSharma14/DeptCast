@@ -3,3 +3,4 @@ uvicorn
 pyautogen
 python-dotenv
 pydantic
+autogen
