@@ -57,7 +57,7 @@ export const Produce = () => {
 
         if (!blueprintText) throw new Error("Drafting timed out. The agents are still thinking, please try again.");
         
-        setMasterPrompt(blueprintText || "Strategic AI Blueprint failed to load. Please write your prompt here.");
+        setMasterPrompt(blueprintText || "Strategic AI Template failed to load. Please write your prompt here.");
       } catch (err) {
         console.error("AI Magic failed:", err);
         const errorMessage = err.message || "Error synthesizing master prompt.";
@@ -127,7 +127,7 @@ export const Produce = () => {
         </motion.div>
         <div className="space-y-4 w-full">
             <h2 className="text-3xl font-heading font-bold text-slate-900 tracking-tight">AI Magic in Progress</h2>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand animate-pulse">Drafting Strategic Blueprint...</p>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand animate-pulse">Drafting Strategic Template...</p>
         </div>
       </div>
     );
@@ -175,7 +175,7 @@ export const Produce = () => {
                 <Sparkles className="h-4 w-4 text-purple-500" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Step 2: AI Magic</span>
             </div>
-            <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">Review Strategic Blueprint</h1>
+            <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">Review Strategic Template</h1>
           </div>
         </div>
       </motion.div>
@@ -190,7 +190,7 @@ export const Produce = () => {
                         <Layout className="w-4 h-4" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm text-slate-900">Strategic Blueprint</h3>
+                        <h3 className="font-bold text-sm text-slate-900">Strategic Template</h3>
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Creative Direction Setup</p>
                     </div>
                 </div>

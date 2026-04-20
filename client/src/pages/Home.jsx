@@ -303,7 +303,7 @@ export const Home = () => {
                                     </p>
                                 </div>
                                 <div className="mt-auto relative z-10 flex items-center font-bold text-brand text-[13px] group-hover:text-brand-700">
-                                    View templates <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                                    View blueprints <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </motion.div>
                         ))}

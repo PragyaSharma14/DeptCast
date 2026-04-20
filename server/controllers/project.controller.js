@@ -34,14 +34,14 @@ export const generateBlueprint = async (req, res) => {
                 dimension: '16:9'
             })
         }).catch(err => {
-            console.error("[AI SERVICE] Network Error:", err.message);
+            console.error(`[AI SERVICE] Network Error while hitting ${autogenUrl}:`, err.message);
             throw new Error(`AI Service at ${autogenUrl} is unreachable. Please verify AUTOGEN_URL on Render.`);
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[AI SERVICE] ${response.status} Error:`, errorText);
-            throw new Error(`Blueprint Generation failed (${response.status}): ${errorText}`);
+            console.error(`[AI SERVICE] ${response.status} Error from ${autogenUrl}:`, errorText.substring(0, 500)); // Log first 500 chars only
+            throw new Error(`Blueprint Generation failed (${response.status}). The service might be sleeping or misconfigured.`);
         }
 
         const result = await response.json();

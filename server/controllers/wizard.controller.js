@@ -3,7 +3,9 @@ import prisma from '../db.js';
 export const getWizardBootstrap = async (req, res) => {
     try {
         // We fetch everything in one query using Prisma's powerful inclusion logic
+        // We fetch only the IT sector for the MVP
         const sectors = await prisma.sector.findMany({
+            where: { key: 'technology-software' },
             include: {
                 departments: {
                     include: {

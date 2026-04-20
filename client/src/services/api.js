@@ -73,7 +73,7 @@ export const createDashboardSchedule = (data) => api.post('/dashboard/schedules'
 export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
 export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);
 export const getMyOrgs = () => api.get('/orgs').then(res => res.data);
-export const getOrgDetails = (orgId) => api.get(`/orgs/${orgId}/details`).then(res => res.data);
+export const getOrgDetails = (orgId) => api.get(`/orgs/${orgId}`).then(res => res.data);
 export const updateOrg = (orgId, data) => api.patch(`/orgs/${orgId}`, data).then(res => res.data);
 export const getOrgMembers = (orgId) => api.get(`/orgs/${orgId}/members`).then(res => res.data);
 export const inviteUser = (orgId, data) => api.post(`/orgs/${orgId}/invites`, data).then(res => res.data);

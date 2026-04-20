@@ -11,6 +11,7 @@ import { Produce } from './pages/videos/Produce';
 import { Review } from './pages/videos/Review';
 import { VideoDetail } from './pages/videos/VideoDetail';
 import { SettingsLayout } from './pages/settings/SettingsLayout';
+import { MyBlueprints } from './pages/projects/MyBlueprints';
 
 // HOC for Protected Routes
 const ProtectedRoute = ({ component: Component, ...rest }) => {
@@ -58,6 +59,7 @@ function App() {
           <Layout>
             <Switch>
               <Route path="/" component={Home} />
+              <Route path="/projects" component={MyBlueprints} />
               <Route path="/videos/new" component={NewVideoWizard} />
               <Route path="/videos/produce/:projectId" component={Produce} />
               <Route path="/videos/review/:projectId" component={Review} />

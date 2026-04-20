@@ -12,6 +12,10 @@ app = FastAPI(title="DeptCast AutoGen Microservice")
 # Simple in-memory storage for background jobs
 JOBS = {}
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "autogen-microservice", "version": "1.1"}
+
 class VideoGenerationRequest(BaseModel):
     department: str
     dimension: str
