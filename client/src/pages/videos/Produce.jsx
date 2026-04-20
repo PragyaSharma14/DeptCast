@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { createProject, generateBlueprint } from '../../services/api';
+import { createProject, generateBlueprint, checkBlueprintStatus } from '../../services/api';
 import { Loader2, Sparkles, CheckCircle2, Wand2, ArrowRight, ArrowLeft, Save, Layout } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
@@ -23,19 +23,45 @@ export const Produce = () => {
         const parsedConfig = JSON.parse(configStr);
         setConfig(parsedConfig);
         
-        // Fetch the AI generated master prompt based on config
-        const result = await generateBlueprint({
+        // Start the AI blueprint generation job
+        const initResult = await generateBlueprint({
             department: parsedConfig.department,
             templateId: parsedConfig.templateId,
             style: parsedConfig.style,
             dimension: parsedConfig.dimension,
             additionalPrompt: parsedConfig.additionalPrompt
         });
+
+        const jobId = initResult.jobId;
+        if (!jobId) throw new Error("Failed to initialize blueprint job.");
+
+        // Poll for completion
+        let attempts = 0;
+        const maxAttempts = 40; // 40 * 3 seconds = 120 seconds total
+        let blueprintText = "";
+
+        while (attempts < maxAttempts) {
+            const statusResult = await checkBlueprintStatus(jobId);
+            
+            if (statusResult.status === 'completed') {
+                blueprintText = statusResult.result;
+                break;
+            } else if (statusResult.status === 'failed') {
+                throw new Error("AI Agent execution failed: " + (statusResult.error || "Internal Error"));
+            }
+
+            // Wait 3 seconds before next poll
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            attempts++;
+        }
+
+        if (!blueprintText) throw new Error("Drafting timed out. The agents are still thinking, please try again.");
         
-        setMasterPrompt(result.blueprint || result.prompt || "Strategic AI Blueprint failed to load. Please write your prompt here.");
+        setMasterPrompt(blueprintText || "Strategic AI Blueprint failed to load. Please write your prompt here.");
       } catch (err) {
         console.error("AI Magic failed:", err);
-        // Fallback
+        const errorMessage = err.message || "Error synthesizing master prompt.";
+        setError(errorMessage);
         setMasterPrompt("Error synthesizing master prompt. You can write your instructions manually here.");
       } finally {
         setLoading(false);

@@ -45,7 +45,7 @@ export const generateBlueprint = async (req, res) => {
         }
 
         const result = await response.json();
-        res.json({ blueprint: result.blueprint || "Failed to parse blueprint." });
+        res.json({ status: "queued", jobId: result.job_id });
     } catch (error) {
         console.error("Generate Blueprint Error:", error);
         res.status(500).json({ 
@@ -53,6 +53,31 @@ export const generateBlueprint = async (req, res) => {
             code: "AI_SERVICE_ERROR",
             hint: "Check if the AutoGen service is awake and the AUTOGEN_URL is set correctly."
         });
+    }
+};
+
+export const checkBlueprintStatus = async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const rawAutogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const autogenUrl = rawAutogenUrl.endsWith('/') ? rawAutogenUrl.slice(0, -1) : rawAutogenUrl;
+
+        const response = await fetch(`${autogenUrl}/jobs/${jobId}`, {
+            method: 'GET',
+            headers: { 
+                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to check job status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        res.json(result);
+    } catch (error) {
+        console.error("Check Blueprint Status Error:", error);
+        res.status(500).json({ error: error.message });
     }
 };
 

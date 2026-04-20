@@ -50,6 +50,7 @@ export const getProjectDetails = (id) => api.get(`/projects/${id}`).then(res => 
 export const getWizardBootstrap = () => api.get('/projects/bootstrap').then(res => res.data);
 export const createProject = (data) => api.post('/projects', data).then(res => res.data);
 export const generateBlueprint = (data) => api.post('/projects/generate-blueprint', data).then(res => res.data);
+export const checkBlueprintStatus = (jobId) => api.get(`/projects/generate-blueprint-status/${jobId}`).then(res => res.data);
 export const generateVideo = (projectId) => api.post(`/videos/project/${projectId}/generate`).then(res => res.data);
 export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/scene/${sceneId}/regenerate`, { promptOverride }).then(res => res.data);
 
