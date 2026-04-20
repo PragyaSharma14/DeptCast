@@ -39,12 +39,29 @@ export const Auth = () => {
                 : await registerApi({ name, email, password });
             
             setToken(data.token);
-            setUser({
+            
+            // Set basic user info
+            const userData = {
                 _id: data._id,
                 name: data.name,
                 email: data.email,
                 currentOrganizationId: data.currentOrganizationId
-            });
+            };
+            setUser(userData);
+
+            // Immediately attempt to sync the active organization details
+            if (data.currentOrganizationId) {
+                try {
+                    const orgDetails = await getOrgDetails(data.currentOrganizationId);
+                    if (orgDetails && orgDetails.organization) {
+                        setActiveOrg(orgDetails.organization);
+                    }
+                } catch (orgErr) {
+                    console.warn("Auth: Failed to fetch initial organization details", orgErr);
+                    // Minimal fallback if direct fetch fails
+                    setActiveOrg({ _id: data.currentOrganizationId, name: 'My Workspace' });
+                }
+            }
             
             setLocation('/');
         } catch (err) {

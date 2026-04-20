@@ -99,6 +99,17 @@ export const Company = () => {
             <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing Identity...</p>
         </div>
     );
+    
+    if (!activeOrg?._id) return (
+        <div className="flex flex-col items-center justify-center p-20 space-y-4 text-center">
+            <Building2 className="text-slate-200" size={60} />
+            <div>
+                <h3 className="text-slate-900 font-bold">No Workspace Selected</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">Please select a workspace from the dashboard to configure company settings.</p>
+            </div>
+            <Button onClick={() => setLocation('/')} className="rounded-xl px-8 mt-4">Go to Dashboard</Button>
+        </div>
+    );
 
     const SectionHeader = ({ icon: Icon, title, subtitle }) => (
         <div className="flex items-start gap-4 mb-8">

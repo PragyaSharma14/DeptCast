@@ -77,6 +77,17 @@ export const Team = () => {
             <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Loading User Directory...</p>
         </div>
     );
+    
+    if (!activeOrg?._id) return (
+        <div className="flex flex-col items-center justify-center p-20 space-y-4 text-center">
+            <Users className="text-slate-200" size={60} />
+            <div>
+                <h3 className="text-slate-900 font-bold">No Workspace Selected</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">Please select a workspace from the dashboard to manage team members.</p>
+            </div>
+            <Button onClick={() => setLocation('/')} className="rounded-xl px-8 mt-4">Go to Dashboard</Button>
+        </div>
+    );
 
     // Check my role in this org
     const myMembership = members.find(m => m.userId?._id === user?._id);

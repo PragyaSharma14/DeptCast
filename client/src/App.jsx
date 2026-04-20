@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route, Switch, useLocation } from 'wouter';
 import { useStore } from './store/useStore';
+import { getMyOrgs } from './services/api';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
@@ -24,8 +25,26 @@ const ProtectedRoute = ({ component: Component, ...rest }) => {
 };
 
 function App() {
-  const { token } = useStore();
+  const { token, user, activeOrg, setActiveOrg } = useStore();
   
+  useEffect(() => {
+    const initOrg = async () => {
+      if (token && !activeOrg) {
+        try {
+          const orgs = await getMyOrgs();
+          if (orgs && orgs.length > 0) {
+            // Pick currentOrganizationId if defined, otherwise first one
+            const primary = orgs.find(o => o.id === user?.currentOrganizationId) || orgs[0];
+            setActiveOrg(primary);
+          }
+        } catch (err) {
+          console.error("Failed to auto-initialize organization", err);
+        }
+      }
+    };
+    initOrg();
+  }, [token, activeOrg, user?.currentOrganizationId, setActiveOrg]);
+
   return (
     <Switch>
       <Route path="/login" component={Auth} />
