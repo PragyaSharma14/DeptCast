@@ -16,6 +16,7 @@ export const Auth = () => {
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [infoMessage, setInfoMessage] = useState('');
     
     const [, setLocation] = useLocation();
     const { setUser, setToken } = useStore();
@@ -29,6 +30,7 @@ export const Auth = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setInfoMessage('');
         setLoading(true);
 
         try {
@@ -152,12 +154,23 @@ export const Auth = () => {
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     {error && (
                                         <motion.div 
-                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold flex items-center gap-3"
+                                            className="p-4 bg-slate-50 border border-red-200 rounded-2xl text-red-600 text-[11px] font-bold flex items-start gap-3 shadow-sm shadow-red-500/5"
                                         >
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                                            {error}
+                                            <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-red-500" />
+                                            <span>{error}</span>
+                                        </motion.div>
+                                    )}
+
+                                    {infoMessage && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 text-[11px] font-bold flex items-start gap-3 shadow-sm shadow-indigo-500/5"
+                                        >
+                                            <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-indigo-500" />
+                                            <span>{infoMessage}</span>
                                         </motion.div>
                                     )}
 
@@ -190,7 +203,15 @@ export const Auth = () => {
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between px-1">
                                             <label className="text-[10px] uppercase tracking-widest font-black text-slate-500">Password</label>
-                                            {isLogin && <button type="button" className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600">Forgot Password?</button>}
+                                            {isLogin && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setInfoMessage("Password recovery is managed by your organization's IT department. Please coordinate with your system administrator for access recovery.")}
+                                                    className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600 transition-colors"
+                                                >
+                                                    Forgot Password?
+                                                </button>
+                                            )}
                                         </div>
                                         <Input 
                                             type="password" 
@@ -222,10 +243,14 @@ export const Auth = () => {
 
                                     <button 
                                         type="button" 
-                                        onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                                        onClick={() => { setIsLogin(!isLogin); setError(''); setInfoMessage(''); }}
                                         className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 transition-all uppercase tracking-widest"
                                     >
-                                        {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log In"}
+                                        {isLogin ? (
+                                            <>Don't have an account? <span className="text-indigo-600">Sign up</span></>
+                                        ) : (
+                                            <>Already have an account? <span className="text-indigo-600">Log In</span></>
+                                        )}
                                     </button>
                                 </div>
                             </CardContent>

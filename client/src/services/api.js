@@ -36,9 +36,13 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
+            // Don't redirect if we're already trying to log in
+            if (error.config.url.includes('/auth/login') || error.config.url.includes('/auth/register')) {
+                return Promise.reject(error);
+            }
+
             console.error("Session expired or unauthorized. Logging out...");
             localStorage.removeItem('video-gen-storage');
-            // Force reload to clear any memory states and redirect to login
             window.location.href = '/login';
         }
         return Promise.reject(error);

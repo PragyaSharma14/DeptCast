@@ -81,7 +81,7 @@ export const login = async (req, res) => {
         token: generateToken(user.id)
       });
     } else {
-      res.status(401).json({ error: 'Invalid email or password' });
+      res.status(401).json({ error: 'Invalid email/password combination. Please verify your credentials or contact your administrator.' });
     }
   } catch (err) {
     console.error(err);
