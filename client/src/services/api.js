@@ -31,6 +31,20 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Response interceptor to handle 401s and other global errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            console.error("Session expired or unauthorized. Logging out...");
+            localStorage.removeItem('video-gen-storage');
+            // Force reload to clear any memory states and redirect to login
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const getProjects = () => api.get('/projects').then(res => res.data);
 export const getProjectDetails = (id) => api.get(`/projects/${id}`).then(res => res.data);
 export const getWizardBootstrap = () => api.get('/projects/bootstrap').then(res => res.data);

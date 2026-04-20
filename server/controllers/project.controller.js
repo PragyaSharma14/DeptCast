@@ -15,7 +15,11 @@ export const generateBlueprint = async (req, res) => {
             }
         }
 
-        const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const rawAutogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const autogenUrl = rawAutogenUrl.endsWith('/') ? rawAutogenUrl.slice(0, -1) : rawAutogenUrl;
+        
+        console.log(`[AI SERVICE] Calling Blueprint Gen at: ${autogenUrl}/generate-blueprint-text`);
+
         const response = await fetch(`${autogenUrl}/generate-blueprint-text`, {
             method: 'POST',
             headers: { 
@@ -27,21 +31,28 @@ export const generateBlueprint = async (req, res) => {
                 department: department || 'General',
                 style: style || 'Cinematic',
                 template: templateSystemPrompt,
-                dimension: '16:9' // Aspect ratio doesn't affect blueprint text
+                dimension: '16:9'
             })
+        }).catch(err => {
+            console.error("[AI SERVICE] Network Error:", err.message);
+            throw new Error(`AI Service at ${autogenUrl} is unreachable. Please verify AUTOGEN_URL on Render.`);
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Blueprint Generation failed: ${errorText}`);
+            console.error(`[AI SERVICE] ${response.status} Error:`, errorText);
+            throw new Error(`Blueprint Generation failed (${response.status}): ${errorText}`);
         }
 
         const result = await response.json();
-        
         res.json({ blueprint: result.blueprint || "Failed to parse blueprint." });
     } catch (error) {
         console.error("Generate Blueprint Error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            error: error.message,
+            code: "AI_SERVICE_ERROR",
+            hint: "Check if the AutoGen service is awake and the AUTOGEN_URL is set correctly."
+        });
     }
 };
 

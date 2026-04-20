@@ -14,13 +14,15 @@ export const requireAuth = async (req, res, next) => {
       token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
       
+      console.log(`[AUTH] Decoded token for UID: ${decoded.id}`);
+
       const user = await prisma.user.findUnique({
           where: { id: decoded.id }
       });
 
       if (!user) {
-        console.warn(`[AUTH] 401 - User ID from token not found: ${decoded.id}`);
-        return res.status(401).json({ error: 'User not found' });
+        console.warn(`[AUTH] 401 - User not found in database for ID: ${decoded.id}. Are you using the correct environment database?`);
+        return res.status(401).json({ error: 'User not found. Please log out and sign up again on this environment.' });
       }
       
       delete user.passwordHash;
@@ -28,15 +30,24 @@ export const requireAuth = async (req, res, next) => {
       console.log(`[AUTH] 200 - Authorized: ${user.email}`);
       next();
     } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        console.warn(`[AUTH] 401 - Token Expired at ${error.expiredAt}`);
+        return res.status(401).json({ error: 'Token expired. Please login again.' });
+      }
+      if (error.name === 'JsonWebTokenError') {
+         console.warn(`[AUTH] 401 - Invalid JWT (Secret Mismatch or Malformed). Expected secret length: ${JWT_SECRET.length}`);
+         return res.status(401).json({ error: 'Invalid authentication session. Please log out and login again.' });
+      }
+
       if (error.code && error.code.startsWith('P')) {
           console.error(`[AUTH] 500 - Database Connection Error (${error.code}):`, error.message);
           return res.status(500).json({ error: 'Database connection failed. Check your DATABASE_URL.' });
       }
-      console.error(`[AUTH] 401 - Token Verification Failed:`, error.message);
+      console.error(`[AUTH] 401 - Auth Error:`, error.message);
       res.status(401).json({ error: 'Not authorized, token failed' });
     }
   } else {
-    console.warn(`[AUTH] 401 - No valid Bearer token found in headers. Keys:`, Object.keys(req.headers));
+    console.warn(`[AUTH] 401 - No Bearer token found in headers. If you just logged in, this suggests the frontend is not persisting the token correctly.`);
     res.status(401).json({ error: 'Not authorized, no token' });
   }
 };
