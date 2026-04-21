@@ -15,12 +15,15 @@ export const generateBlueprint = async (req, res) => {
             }
         }
 
-        const rawAutogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
-        const autogenUrl = rawAutogenUrl.endsWith('/') ? rawAutogenUrl.slice(0, -1) : rawAutogenUrl;
+        const autogenUrl = process.env.AUTOGEN_URL;
+        if (!autogenUrl && process.env.NODE_ENV === 'production') {
+            throw new Error("AUTOGEN_URL is missing in production environment. Please set it in your Render settings.");
+        }
+        const finalAutogenUrl = (autogenUrl || 'http://localhost:8000').replace(/\/$/, '');
         
-        console.log(`[AI SERVICE] Calling Blueprint Gen at: ${autogenUrl}/generate-blueprint-text`);
+        console.log(`[AI SERVICE] Calling Blueprint Gen at: ${finalAutogenUrl}/generate-blueprint-text`);
 
-        const response = await fetch(`${autogenUrl}/generate-blueprint-text`, {
+        const response = await fetch(`${finalAutogenUrl}/generate-blueprint-text`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -59,10 +62,10 @@ export const generateBlueprint = async (req, res) => {
 export const checkBlueprintStatus = async (req, res) => {
     try {
         const { jobId } = req.params;
-        const rawAutogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
-        const autogenUrl = rawAutogenUrl.endsWith('/') ? rawAutogenUrl.slice(0, -1) : rawAutogenUrl;
+        const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
+        const finalAutogenUrl = autogenUrl.replace(/\/$/, '');
 
-        const response = await fetch(`${autogenUrl}/jobs/${jobId}`, {
+        const response = await fetch(`${finalAutogenUrl}/jobs/${jobId}`, {
             method: 'GET',
             headers: { 
                 'X-API-Secret': process.env.AUTOGEN_SECRET || ''

@@ -220,6 +220,9 @@ export const inviteUser = async (req, res) => {
     });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (!process.env.FRONTEND_URL && process.env.NODE_ENV === 'production') {
+        console.warn("[WARN] FRONTEND_URL is missing in production. Defaulting to localhost for invite links.");
+    }
     const inviteUrl = `${frontendUrl}/invite?token=${rawToken}&email=${email}`;
 
     let sentViaEmail = false;

@@ -36,7 +36,7 @@ export function GeneratorForm() {
     setCurrentVideo(null); // Clear previous
 
     try {
-      const response = await axios.post('http://localhost:5000/api/generate-video', {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/generate-video`, {
         prompt,
         style,
         resolution,

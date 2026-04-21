@@ -64,8 +64,12 @@ export const generateVideo = async (req, res) => {
                     if (dbTemplate) templateContext = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
                 }
 
-                const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
-                const autogenRes = await fetch(`${autogenUrl}/generate-master-shot`, {
+                const autogenUrl = process.env.AUTOGEN_URL;
+                if (!autogenUrl && process.env.NODE_ENV === 'production') {
+                    throw new Error("AUTOGEN_URL is missing in production environment. Please set it in your Render settings.");
+                }
+                const finalAutogenUrl = (autogenUrl || 'http://localhost:8000').replace(/\/$/, '');
+                const autogenRes = await fetch(`${finalAutogenUrl}/generate-master-shot`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
