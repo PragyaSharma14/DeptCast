@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://dept-cast.vercel.app',
+  'https://deptcast-fd.onrender.com',
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 

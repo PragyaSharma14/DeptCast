@@ -3,8 +3,10 @@ import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, Sparkles, Video, CheckCircle2, ArrowRight, Loader2,
-    Building2, Monitor, Tablet, Smartphone, UserCheck, Layout, Clock, FileText
+    Building2, Monitor, Tablet, Smartphone, UserCheck, Layout, Clock, FileText,
+    Eye, Edit3
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { generateBlueprint, createProject } from '../../services/api';
@@ -25,6 +27,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
     });
     
     const [aiResult, setAiResult] = useState('');
+    const [isEditingTemplate, setIsEditingTemplate] = useState(false);
 
     // Reset when modal opens with a new department
     useEffect(() => {
@@ -366,17 +369,45 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                             >
                                                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
                                                     <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="font-bold text-slate-900 text-sm">Strategic Template Definition</h3>
-                                                        <span className="px-3 py-1 bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
-                                                            <Sparkles size={12} /> Synthesizing
-                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <h3 className="font-bold text-slate-900 text-sm italic">Strategic Template Definition</h3>
+                                                            <span className="px-3 py-1 bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-widest rounded-full flex items-center gap-1">
+                                                                <Sparkles size={12} /> Synthesizing
+                                                            </span>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setIsEditingTemplate(!isEditingTemplate)}
+                                                            className={cn(
+                                                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                                                                isEditingTemplate 
+                                                                    ? "bg-slate-900 text-white shadow-sm" 
+                                                                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                                            )}
+                                                        >
+                                                            {isEditingTemplate ? <><Eye size={12} /> Preview</> : <><Edit3 size={12} /> Edit</>}
+                                                        </button>
                                                     </div>
-                                                    <textarea
-                                                        value={aiResult}
-                                                        onChange={(e) => setAiResult(e.target.value)}
-                                                        className="w-full h-80 bg-white border border-slate-200 rounded-xl p-5 text-slate-700 focus:outline-none focus:border-brand font-medium leading-relaxed resize-none shadow-inner text-sm"
-                                                        placeholder="Waiting for AI synthesis..."
-                                                    />
+
+                                                    {isEditingTemplate ? (
+                                                        <textarea
+                                                            value={aiResult}
+                                                            onChange={(e) => setAiResult(e.target.value)}
+                                                            className="w-full h-80 bg-white border border-slate-200 rounded-xl p-5 text-slate-700 focus:outline-none focus:border-brand font-medium leading-relaxed resize-none shadow-inner text-sm"
+                                                            placeholder="Waiting for AI synthesis..."
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-80 bg-white border border-slate-200 rounded-xl p-6 text-slate-700 overflow-y-auto shadow-inner prose prose-slate max-w-none prose-sm prose-headings:font-bold prose-headings:text-slate-900 prose-p:leading-relaxed prose-li:my-1">
+                                                            {aiResult ? (
+                                                                <ReactMarkdown className="markdown-content">
+                                                                    {aiResult}
+                                                                </ReactMarkdown>
+                                                            ) : (
+                                                                <div className="h-full flex items-center justify-center text-slate-400 italic">
+                                                                    Waiting for AI synthesis...
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         </AnimatePresence>
