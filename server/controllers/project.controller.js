@@ -23,7 +23,7 @@ export const generateBlueprint = async (req, res) => {
         
         console.log(`[AI SERVICE] Calling Blueprint Gen at: ${finalAutogenUrl}/generate-blueprint-text`);
 
-        const response = await fetch(`${finalAutogenUrl}/generate-blueprint-text`, {
+        let response = await fetch(`${finalAutogenUrl}/generate-blueprint-text`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -37,9 +37,29 @@ export const generateBlueprint = async (req, res) => {
                 dimension: '16:9'
             })
         }).catch(err => {
-            console.error(`[AI SERVICE] Network Error while hitting ${autogenUrl}:`, err.message);
-            throw new Error(`AI Service at ${autogenUrl} is unreachable. Please verify AUTOGEN_URL on Render.`);
+            console.error(`[AI SERVICE] Network Error:`, err.message);
+            throw new Error(`AI Service unreachable. Verify AUTOGEN_URL.`);
         });
+
+        // Retry once if the service is sleeping (502/503)
+        if (response.status === 502 || response.status === 503) {
+            console.log("[AI SERVICE] Service sleeping or restarting. Retrying in 5 seconds...");
+            await new Promise(r => setTimeout(r, 5000));
+            response = await fetch(`${finalAutogenUrl}/generate-blueprint-text`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+                },
+                body: JSON.stringify({
+                    prompt: additionalPrompt || "Standard template generation.",
+                    department: department || 'General',
+                    style: style || 'Cinematic',
+                    template: templateSystemPrompt,
+                    dimension: '16:9'
+                })
+            }).catch(err => { throw new Error(`AI Service unreachable after retry.`); });
+        }
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -65,12 +85,18 @@ export const checkBlueprintStatus = async (req, res) => {
         const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
         const finalAutogenUrl = autogenUrl.replace(/\/$/, '');
 
-        const response = await fetch(`${finalAutogenUrl}/jobs/${jobId}`, {
+        let response = await fetch(`${finalAutogenUrl}/jobs/${jobId}`, {
             method: 'GET',
-            headers: { 
-                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
-            }
+            headers: { 'X-API-Secret': process.env.AUTOGEN_SECRET || '' }
         });
+
+        if (response.status === 502 || response.status === 503) {
+            await new Promise(r => setTimeout(r, 2000));
+            response = await fetch(`${finalAutogenUrl}/jobs/${jobId}`, {
+                method: 'GET',
+                headers: { 'X-API-Secret': process.env.AUTOGEN_SECRET || '' }
+            });
+        }
 
         if (!response.ok) {
             throw new Error(`Failed to check job status: ${response.status}`);
