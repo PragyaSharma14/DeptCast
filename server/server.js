@@ -6,6 +6,7 @@ import apiRoutes from "./routes/api.js";
 
 
 const app = express();
+app.set('trust proxy', 1); // Trust Render's proxy for accurate IP-based rate limiting
 const PORT = process.env.PORT || 5000;
 
 import path from 'path';
