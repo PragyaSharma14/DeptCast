@@ -93,9 +93,11 @@ export const NewVideoWizard = () => {
             additionalPrompt: config.additionalPrompt
         });
         setConfig(prev => ({ ...prev, additionalPrompt: result.blueprint }));
-    } catch (err) {
-        console.error("Blueprint synthesis failed:", err);
-        alert("Strategic synthesis engine timed out. Please try again.");
+    } catch (error) {
+        console.error("Blueprint synthesis failed:", error);
+        const backendError = error.response?.data?.error || error.message;
+        const backendHint = error.response?.data?.hint ? `\nHint: ${error.response.data.hint}` : "";
+        alert(`Strategic synthesis failed.\nError: ${backendError}${backendHint}`);
     } finally {
         setSynthesizing(false);
     }

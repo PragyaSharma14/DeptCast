@@ -88,7 +88,9 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             setAiResult(blueprintText);
         } catch (error) {
             console.error("AI execution failed:", error);
-            alert("Failed to synthesize strategic template. " + (error.message || "Please check logs."));
+            const backendError = error.response?.data?.error || error.message;
+            const backendHint = error.response?.data?.hint ? `\nHint: ${error.response.data.hint}` : "";
+            alert(`Failed to synthesize strategic template.\nError: ${backendError}${backendHint}`);
             setStep(1); // Revert step on error
         } finally {
             setLoading(false);
