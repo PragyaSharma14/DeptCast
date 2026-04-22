@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useStore } from '../store/useStore';
-import { login as loginApi, register as registerApi } from '../services/api';
+import { login as loginApi, register as registerApi, getOrgDetails } from '../services/api';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent } from '../components/ui/Card';
@@ -19,7 +19,7 @@ export const Auth = () => {
     const [infoMessage, setInfoMessage] = useState('');
     
     const [, setLocation] = useLocation();
-    const { setUser, setToken } = useStore();
+    const { setUser, setToken, setActiveOrg } = useStore();
 
     const features = [
         { icon: Sparkles, title: "AI Production Blueprints", desc: "Draft complex production scripts with one click." },
