@@ -37,7 +37,7 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 401) {
             // Don't redirect if we're already trying to log in
-            if (error.config.url.includes('/auth/login') || error.config.url.includes('/auth/register')) {
+            if (error.config.url.includes('/login') || error.config.url.includes('/register')) {
                 return Promise.reject(error);
             }
 
@@ -70,8 +70,8 @@ export const getDashboardSchedules = () => api.get('/dashboard/schedules').then(
 export const createDashboardSchedule = (data) => api.post('/dashboard/schedules', data).then(res => res.data);
 
 // Auth & Tenant APIs
-export const login = (credentials) => api.post('/auth/login', credentials).then(res => res.data);
-export const register = (credentials) => api.post('/auth/register', credentials).then(res => res.data);
+export const login = (credentials) => api.post('/login', credentials).then(res => res.data);
+export const register = (credentials) => api.post('/register', credentials).then(res => res.data);
 export const getMyOrgs = () => api.get('/orgs').then(res => res.data);
 export const getOrgDetails = (orgId) => api.get(`/orgs/${orgId}`).then(res => res.data);
 export const updateOrg = (orgId, data) => api.patch(`/orgs/${orgId}`, data).then(res => res.data);
@@ -79,7 +79,7 @@ export const getOrgMembers = (orgId) => api.get(`/orgs/${orgId}/members`).then(r
 export const inviteUser = (orgId, data) => api.post(`/orgs/${orgId}/invites`, data).then(res => res.data);
 export const updateMemberRole = (orgId, memberId, role) => api.patch(`/orgs/${orgId}/members/${memberId}`, { role }).then(res => res.data);
 export const removeMember = (orgId, memberId) => api.delete(`/orgs/${orgId}/members/${memberId}`).then(res => res.data);
-export const acceptInviteReq = (data) => api.post('/auth/accept-invite', data).then(res => res.data);
+export const acceptInviteReq = (data) => api.post('/accept-invite', data).then(res => res.data);
 
 export const getMediaUrl = (path) => {
     if(!path) return null;

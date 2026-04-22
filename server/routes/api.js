@@ -15,7 +15,7 @@ const router = express.Router();
 router.use(apiLimiter);
 
 // Auth routes (stricter limit)
-router.use('/auth', authLimiter, authRoutes);
+router.use('/', authLimiter, authRoutes);
 
 // Health check endpoint
 router.get("/health", (req, res) => {
