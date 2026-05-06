@@ -22,7 +22,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         template: null, // This is the Blueprint in UI
         dimension: '16:9',
         style: 'Hyper Realistic',
-        duration: 16,
+        duration: 15,
         customPrompt: ''
     });
     
@@ -39,7 +39,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 customPrompt: '',
                 dimension: '16:9',
                 style: 'Hyper Realistic',
-                duration: 16
+                duration: 15
             }));
             setAiResult('');
         }
@@ -299,7 +299,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                         <Clock size={16} className="text-brand"/> Target Duration
                                                     </label>
                                                     <div className="flex gap-4">
-                                                        {[15, 30, 60, 90].map(secs => (
+                                                        {[5, 10, 15].map(secs => (
                                                             <button
                                                                 key={secs}
                                                                 onClick={() => setConfig({...config, duration: secs})}

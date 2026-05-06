@@ -151,7 +151,8 @@ export const createProject = async (req, res) => {
                 department: department || 'General',
                 style: style || 'Cinematic',
                 template: templateSystemPrompt,
-                dimension: dimension || '16:9'
+                dimension: dimension || '16:9',
+                targetDuration: targetDuration || 15
             })
         });
 

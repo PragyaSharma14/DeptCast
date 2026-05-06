@@ -23,7 +23,7 @@ export const NewVideoWizard = () => {
     templateId: '',
     style: 'Hyper-Realistic', // Character/Style
     dimension: '16:9',
-    targetDuration: 16,
+    targetDuration: 15,
     additionalPrompt: ''
   });
 
@@ -350,9 +350,9 @@ export const NewVideoWizard = () => {
                                    onChange={(e) => setConfig({ ...config, targetDuration: parseInt(e.target.value) })}
                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 appearance-none focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand font-semibold text-sm tracking-wide shadow-sm cursor-pointer"
                                >
-                                   <option value={8}>8 Seconds (Focused)</option>
-                                   <option value={16}>16 Seconds (Standard)</option>
-                                   <option value={20}>20 Seconds (Extended)</option>
+                                   <option value={5}>5 Seconds (Focused)</option>
+                                   <option value={10}>10 Seconds (Standard)</option>
+                                   <option value={15}>15 Seconds (Extended)</option>
                                </select>
                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                    <ChevronDown size={16} />

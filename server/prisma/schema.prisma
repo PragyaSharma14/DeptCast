@@ -48,6 +48,7 @@ model Organization {
   city               String?
 
   subscriptionStatus String       @default("trialing")
+  credits            Int          @default(100)
   createdAt          DateTime     @default(now())
 
   users              User[]       // users who have this as currentOrganization

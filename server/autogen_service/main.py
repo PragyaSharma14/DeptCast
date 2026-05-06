@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from agents import run_autogen_workflow, run_autogen_blueprint
-from cinematographer import run_autogen_cinematographer
 import os
 import uuid
 from fastapi import BackgroundTasks
@@ -23,12 +22,9 @@ class VideoGenerationRequest(BaseModel):
     prompt: str
     style: str
     template: str
+    targetDuration: Optional[int] = 15
 
-class MasterShotRequest(BaseModel):
-    scenes: List[Dict[str, Any]]
-    dimension: str
-    style: str
-    template: str
+
 
 async def verify_api_key(x_api_secret: str = Header(None)):
     expected_secret = os.getenv("AUTOGEN_SECRET")
@@ -47,7 +43,8 @@ async def generate_script(req: VideoGenerationRequest):
             style=req.style,
             template=req.template,
             dimension=req.dimension,
-            user_prompt=req.prompt
+            user_prompt=req.prompt,
+            target_duration=req.targetDuration
         )
         return {"status": "success", "scenes": scenes}
     except Exception as e:
@@ -57,20 +54,7 @@ async def generate_script(req: VideoGenerationRequest):
             raise HTTPException(status_code=402, detail="AI Quota Exceeded: Please check your API credits/limits.")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/generate-master-shot", dependencies=[Depends(verify_api_key)])
-async def generate_master_shot(req: MasterShotRequest):
-    try:
-        print(f"Received master shot request for {len(req.scenes)} scenes.")
-        master_prompt = run_autogen_cinematographer(
-            scenes=req.scenes,
-            dimension=req.dimension,
-            style=req.style,
-            template=req.template
-        )
-        return {"status": "success", "master_prompt": master_prompt}
-    except Exception as e:
-        print(f"Error in Cinematographer workflow: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 def run_blueprint_task(job_id: str, req: VideoGenerationRequest):
     try:

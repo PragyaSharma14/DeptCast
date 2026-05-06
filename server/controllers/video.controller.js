@@ -1,7 +1,7 @@
 import prisma from '../db.js';
 import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
-import { generateVideoOpenAIAsync } from '../services/openai.service.js';
+import { generateVideoVeoAsync } from '../services/veo.service.js';
 import { renderFinalVideo } from '../services/render.service.js';
 
 export const generateVideo = async (req, res) => {
@@ -20,22 +20,40 @@ export const generateVideo = async (req, res) => {
             return res.status(400).json({ error: "Generation is already in progress for this project." });
         }
 
-        const updatedProject = await prisma.project.update({
-            where: { id: projectId },
-            data: { status: 'generating' }
-        });
-
         // Get all scenes for project
         const scenes = await prisma.scene.findMany({
             where: { projectId },
             orderBy: { sceneNumber: 'asc' }
         });
+        
+        // Dynamic Credit Calculation: 1 credit per second (5 seconds per Veo scene)
+        const totalDurationSeconds = scenes.length * 5;
+        const CREDIT_COST = totalDurationSeconds;
+        
+        const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
+        if (org.credits < CREDIT_COST) {
+            return res.status(402).json({ error: `Insufficient credits. This ${totalDurationSeconds}s video requires ${CREDIT_COST} credits.` });
+        }
+
+        // Deduct Credits and Update Status in one transaction
+        const [updatedProject] = await prisma.$transaction([
+            prisma.project.update({
+                where: { id: projectId },
+                data: { status: 'generating' }
+            }),
+            prisma.organization.update({
+                where: { id: org.id },
+                data: { credits: { decrement: CREDIT_COST } }
+            })
+        ]);
+
         const template = getTemplateByDomain(project.domain);
         
         // Respond with updated status to trigger frontend polling immediately
         res.status(202).json({ 
-            message: "Video generation started via OpenAI", 
-            project: { ...updatedProject, _id: updatedProject.id } 
+            message: `Video generation started via Google Veo (${totalDurationSeconds}s)`, 
+            project: { ...updatedProject, _id: updatedProject.id },
+            creditsRemaining: org.credits - CREDIT_COST
         });
 
         // Background Processing
@@ -48,76 +66,68 @@ export const generateVideo = async (req, res) => {
                 };
                 const videoRes = dimensionMap[project.dimension] || "1920x1080";
 
-                // 1. Synthesize Master Shot using AutoGen Cinematographer
-                console.log("Synthesizing Master Continuous Shot via OpenAI Sora optimization...");
-                
-                // Update scenes to generating
+                // 1. Mark scenes as generating
                 await prisma.scene.updateMany({
                     where: { projectId },
                     data: { status: 'generating' }
                 });
 
-                // Fetch template rules 
-                let templateContext = "Standard Corporate Rules";
-                if (project.templateId) {
-                    const dbTemplate = await prisma.template.findUnique({ where: { id: project.templateId } });
-                    if (dbTemplate) templateContext = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
-                }
+                console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes...`);
 
-                const autogenUrl = process.env.AUTOGEN_URL;
-                if (!autogenUrl && process.env.NODE_ENV === 'production') {
-                    throw new Error("AUTOGEN_URL is missing in production environment. Please set it in your Render settings.");
-                }
-                const finalAutogenUrl = (autogenUrl || 'http://localhost:8000').replace(/\/$/, '');
-                const autogenRes = await fetch(`${finalAutogenUrl}/generate-master-shot`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-API-Secret': process.env.AUTOGEN_SECRET || ''
-                    },
-                    body: JSON.stringify({
-                        scenes: scenes.map(s => ({ sceneNumber: s.sceneNumber, description: s.description })),
-                        dimension: project.dimension || "16:9",
-                        style: project.style || "Cinematic",
-                        template: templateContext
-                    })
+                // 2. Call Veo in parallel for each scene
+                const videoPromises = scenes.map(async (scene) => {
+                    try {
+                        const videoUrl = await generateVideoVeoAsync(scene.prompt, 5, videoRes);
+                        
+                        // Update individual scene status
+                        await prisma.scene.update({
+                            where: { id: scene.id },
+                            data: { status: 'completed' } // We could store a videoUrl on the scene model if it existed, for now just status
+                        });
+                        
+                        // Pass along the URL so we can stitch it later.
+                        // We will add the url dynamically to the scene object
+                        return { ...scene, videoUrl };
+                    } catch (error) {
+                        await prisma.scene.update({
+                            where: { id: scene.id },
+                            data: { status: 'failed' }
+                        });
+                        throw error; // Fail the entire project if one scene fails
+                    }
                 });
 
-                if (!autogenRes.ok) {
-                    throw new Error(`AutoGen Master Shot synthesis failed: ${await autogenRes.text()}`);
-                }
+                const completedScenesWithVideoUrls = await Promise.all(videoPromises);
+                console.log(`[Google Veo] All scenes generated. Stitching videos...`);
 
-                const autogenData = await autogenRes.json();
-                const masterPrompt = autogenData.master_prompt;
-                console.log(`Generated Master Prompt for OpenAI: ${masterPrompt}`);
-
-                // 2. Call OpenAI Ora - Single Contiguous Generation
-                const targetLen = project.targetDuration || 5; 
-                const videoUrl = await generateVideoOpenAIAsync(masterPrompt, targetLen, videoRes);
-                console.log(`OpenAI Sora Master Video Generated: ${videoUrl}`);
-
-                // 3. Mark all narrative scenes as "completed" in status only
-                await prisma.scene.updateMany({
-                     where: { projectId },
-                     data: { status: 'completed' }
-                });
+                // 3. Stitch videos together
+                const finalVideoUrl = await renderFinalVideo(completedScenesWithVideoUrls, projectId);
                 
                 // 4. Update project with final single video URL
                 await prisma.project.update({
                     where: { id: projectId },
                     data: { 
                         status: 'completed',
-                        finalVideoUrl: videoUrl 
+                        finalVideoUrl: finalVideoUrl 
                     }
                 });
 
-                console.log(`Project ${projectId} completely finished using OpenAI Sora Master Shot! URL: ${videoUrl}`);
+                console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
             } catch (err) {
-                console.error("Background OpenAI Video Generation Failed for project", projectId, err);
-                await prisma.project.update({
-                    where: { id: projectId },
-                    data: { status: 'failed' }
-                });
+                console.error("Background Video Generation Failed for project", projectId, err);
+                
+                // Refund Credits and mark failed
+                await prisma.$transaction([
+                    prisma.project.update({
+                        where: { id: projectId },
+                        data: { status: 'failed' }
+                    }),
+                    prisma.organization.update({
+                        where: { id: req.org.id || req.org._id },
+                        data: { credits: { increment: CREDIT_COST } } // Refund dynamic CREDIT_COST
+                    })
+                ]);
+                console.log(`[Refund] Refunded ${CREDIT_COST} credits to org ${req.org.id || req.org._id} due to generation failure.`);
             }
         })();
 
@@ -154,10 +164,8 @@ export const regenerateScene = async (req, res) => {
         (async () => {
             try {
                 const finalPrompt = buildCinematicPrompt(promptOverride || scene.prompt, { tone: project.style }, template);
-                const videoUrl = await generateVideoOpenAIAsync(finalPrompt, template.defaultDuration || 8, "1920x1080");
+                const videoUrl = await generateVideoVeoAsync(finalPrompt, 5, "1920x1080");
                 
-                // For Sora, a "scene regeneration" updates the entire project's shot if requested
-                // or we update the scene status. 
                 await prisma.scene.update({
                     where: { id: sceneId },
                     data: { status: 'completed' }
