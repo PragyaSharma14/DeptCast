@@ -9,3 +9,25 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+.env/
+
+# App Specific Temporary Files
+server/latest_debug.json
+server/sdk.json
+server/sdk_videos.json
+server/scratch/
+server/tmp/
+server/check_data.js
+
+# Outputs
+server/public/outputs/*
+!server/public/outputs/.gitkeep

@@ -1,6 +1,10 @@
 fastapi
 uvicorn
-ag2[openai]
+ag2[gemini]
 openai
 python-dotenv
 pydantic
+google-generativeai
+google-genai
+google-cloud-aiplatform
+jsonschema

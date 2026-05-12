@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { 
-    getDashboardStats, 
-    getDashboardSchedules,
-    getWizardBootstrap
-} from '../services/api';
-import { 
-    MessageSquare, Users, TrendingUp, Bell,
-    ArrowRight, Video, Sparkles, FileText, CheckCircle2,
-    Calendar, Clock, LayoutGrid, PenTool
-} from 'lucide-react';
+import { getDashboardStats, getDashboardSchedules, getWizardBootstrap } from '../services/api';
+import { MessageSquare, Users, TrendingUp, Bell, ArrowRight, Video, Sparkles, FileText, CheckCircle2, Calendar, Clock, LayoutGrid, PenTool } from 'lucide-react';
 import { CreateScheduleModal } from '../components/features/CreateScheduleModal';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/Button';
