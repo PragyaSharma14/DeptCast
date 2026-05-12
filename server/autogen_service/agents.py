@@ -12,7 +12,7 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
     config_list = [{
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-1.5-flash",
         "api_key": gemini_api_key,
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
     }]
@@ -149,7 +149,7 @@ def run_autogen_blueprint(department: str, style: str, template: str, dimension:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
     config_list = [{
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-1.5-flash",
         "api_key": gemini_api_key,
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
     }]
