@@ -6,7 +6,7 @@ This document maps out the end-to-end backend orchestration, database interactio
 
 The architecture is built around three major asynchronous phases:
 1.  **Ingestion & State Creation:** Capturing user intents via React and pushing the initial job specs into the PostgreSQL database.
-2.  **AI Script Orchestration:** Disengaging the Node.js main thread to let the `AutoGen` Python microservice run a multi-agent `GroupChat`. The Groq-powered agents iterate to write the perfect cinematic "Master Shot" prompt based on the user's input constraints.
+2.  **AI Script Orchestration:** Disengaging the Node.js main thread to let the `AutoGen` Python microservice run a multi-agent `GroupChat`. The Gemini-powered agents iterate to write the perfect cinematic "Master Shot" prompt based on the user's input constraints.
 3.  **Video Generation:** Node.js takes the validated Master Prompt and ships it to OpenAI Sora for rendering. It manages a simplified asynchronous polling strategy to monitor the generation until completion.
 
 ---
@@ -35,7 +35,7 @@ sequenceDiagram
     NodeServer->>DB: Prisma.Project.create(status: "draft")
     
     rect rgb(20, 50, 20)
-    Note over NodeServer, Critic: Phase 1: AI Prompt Orchestration (Groq Llama 3)
+    Note over NodeServer, Critic: Phase 1: AI Prompt Orchestration (Google Gemini)
     
     NodeServer->>UserProxy: REST POST: Request structured Master Shot prompt
     UserProxy->>Director: Direct task: Draft cinematic continuous shot based on scenes
@@ -82,7 +82,7 @@ sequenceDiagram
 
 ### 2. AutoGen Swarm (Python Microservice)
 > **Location**: `/server/autogen_service`
-> **Stack**: Python, FastAPI, PyAutoGen, Groq.
+> **Stack**: Python, FastAPI, PyAutoGen, Google Gemini.
 - **Role**: Converting discrete narrative scenes into one single, highly descriptive "Oner" shot prompt for Sora.
 - **Design Pattern**: It employs a **Critic-Director Multi-Agent Swarm**.
   - **The Director** specializes in cinematic syntax specifically optimized for Sora's high-fidelity parameters.

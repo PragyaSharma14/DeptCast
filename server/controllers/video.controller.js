@@ -3,6 +3,7 @@ import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
 import { generateVideoVeoAsync } from '../services/veo.service.js';
 import { renderFinalVideo } from '../services/render.service.js';
+import { generateReferenceImageAsync } from '../services/imagen.service.js';
 
 export const generateVideo = async (req, res) => {
     try {
@@ -32,7 +33,7 @@ export const generateVideo = async (req, res) => {
         
         const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
         if (org.credits < CREDIT_COST) {
-            return res.status(402).json({ error: `Insufficient credits. This ${totalDurationSeconds}s video requires ${CREDIT_COST} credits.` });
+            return res.status(402).json({ error: `Insufficient credits. This ${project.targetDuration}s video requires ${CREDIT_COST} credits.` });
         }
 
         // Deduct Credits and Update Status in one transaction
@@ -51,7 +52,7 @@ export const generateVideo = async (req, res) => {
         
         // Respond with updated status to trigger frontend polling immediately
         res.status(202).json({ 
-            message: `Video generation started via Google Veo (${totalDurationSeconds}s)`, 
+            message: `Video generation started via Google Veo (${project.targetDuration}s)`, 
             project: { ...updatedProject, _id: updatedProject.id },
             creditsRemaining: org.credits - CREDIT_COST
         });
@@ -65,6 +66,9 @@ export const generateVideo = async (req, res) => {
                     "9:16": "1080x1920"
                 };
                 const videoRes = dimensionMap[project.dimension] || "1920x1080";
+                
+                // 4s -> 4s per scene, 8s -> 8s per scene, 16s -> 8s per scene (2 scenes)
+                const perSceneDuration = project.targetDuration <= 8 ? project.targetDuration : 8;
 
                 // 1. Mark scenes as generating
                 await prisma.scene.updateMany({
@@ -72,12 +76,12 @@ export const generateVideo = async (req, res) => {
                     data: { status: 'generating' }
                 });
 
-                console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes...`);
+                console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes (${perSceneDuration}s each)...`);
 
                 // 2. Call Veo in parallel for each scene
                 const videoPromises = scenes.map(async (scene) => {
                     try {
-                        const videoUrl = await generateVideoVeoAsync(scene.prompt, 5, videoRes);
+                        const videoUrl = await generateVideoVeoAsync(scene.prompt, perSceneDuration, videoRes, project.referenceImageUrl);
                         
                         // Update individual scene status
                         await prisma.scene.update({
@@ -98,19 +102,24 @@ export const generateVideo = async (req, res) => {
                 });
 
                 const completedScenesWithVideoUrls = await Promise.all(videoPromises);
-                console.log(`[Google Veo] All scenes generated. Stitching videos...`);
-
-                // 3. Stitch videos together
-                const finalVideoUrl = await renderFinalVideo(completedScenesWithVideoUrls, projectId);
                 
-                // 4. Update project with final single video URL
-                await prisma.project.update({
-                    where: { id: projectId },
-                    data: { 
-                        status: 'completed',
-                        finalVideoUrl: finalVideoUrl 
-                    }
-                });
+                let finalVideoUrl;
+                if (completedScenesWithVideoUrls.length > 1) {
+                    console.log(`[Google Veo] Multiple scenes detected. Stitching videos...`);
+                    finalVideoUrl = await renderFinalVideo(completedScenesWithVideoUrls, projectId);
+                } else {
+                    console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
+                    finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
+                    
+                    // Manually update project since we skipped renderFinalVideo
+                    await prisma.project.update({
+                        where: { id: projectId },
+                        data: { 
+                            status: 'completed',
+                            finalVideoUrl: finalVideoUrl 
+                        }
+                    });
+                }
 
                 console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
             } catch (err) {
@@ -190,3 +199,62 @@ export const regenerateScene = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
+export const generateReferenceImage = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const project = await prisma.project.findFirst({ 
+            where: { 
+                id: projectId,
+                organizationId: req.org.id || req.org._id
+            },
+            include: { scenes: true }
+        });
+        
+        if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
+        if (!project.scenes || project.scenes.length === 0) return res.status(400).json({ error: "Project has no scenes to generate an image from." });
+
+        const CREDIT_COST = 0.5;
+        
+        const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
+        if (org.credits < CREDIT_COST) {
+            return res.status(402).json({ error: `Insufficient credits. Generating a reference image requires ${CREDIT_COST} credits.` });
+        }
+
+        // Use the first scene's prompt as the visual anchor
+        const scenePrompt = project.scenes[0].prompt;
+
+        const dimensionMap = {
+            "16:9": "16:9",
+            "9:16": "9:16",
+            "1:1": "1:1"
+        };
+        const aspectRatio = dimensionMap[project.dimension] || "16:9";
+
+        // Generate Image
+        const imageUrl = await generateReferenceImageAsync(scenePrompt, aspectRatio);
+
+        // Deduct Credits and Update Project
+        const [updatedProject] = await prisma.$transaction([
+            prisma.project.update({
+                where: { id: projectId },
+                data: { referenceImageUrl: imageUrl }
+            }),
+            prisma.organization.update({
+                where: { id: org.id },
+                data: { credits: { decrement: CREDIT_COST } }
+            })
+        ]);
+
+        res.status(200).json({ 
+            message: "Reference image generated successfully", 
+            imageUrl: imageUrl,
+            creditsRemaining: org.credits - CREDIT_COST
+        });
+
+    } catch (error) {
+        console.error("Generate Reference Image Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+

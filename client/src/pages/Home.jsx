@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { 
     getDashboardStats, 
     getDashboardSchedules,
+    getWizardBootstrap
 } from '../services/api';
 import { 
     MessageSquare, Users, TrendingUp, Bell,
@@ -13,6 +14,7 @@ import {
 import { CreateScheduleModal } from '../components/features/CreateScheduleModal';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/Button';
+import { useStore } from '../store/useStore';
 
 export const Home = () => {
     const [, setLocation] = useLocation();
@@ -20,15 +22,23 @@ export const Home = () => {
     const [schedules, setSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [departments, setDepartments] = useState([]);
+    
+    const { openProductionModal } = useStore();
 
     const loadData = async () => {
         try {
-            const [statData, scheduleData] = await Promise.all([
+            const [statData, scheduleData, wizardData] = await Promise.all([
                 getDashboardStats(),
-                getDashboardSchedules()
+                getDashboardSchedules(),
+                getWizardBootstrap()
             ]);
             setStats(statData);
             setSchedules(scheduleData);
+            
+            if (wizardData && wizardData.length > 0) {
+                setDepartments(wizardData[0].departments || []);
+            }
         } catch (err) {
             console.error("Dashboard Load Error", err);
         } finally {
@@ -156,7 +166,7 @@ export const Home = () => {
                                 </div>
                                 <Button 
                                     className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-3 text-sm shadow-md transition-all active:scale-[0.98] btn-primary" 
-                                    onClick={() => setLocation('/videos/new')}
+                                    onClick={() => openProductionModal(departments.find(d => d.name === 'Human Resources') || departments[0])}
                                 >
                                     <Video className="mr-2" size={16} /> Generate Video
                                 </Button>
@@ -172,7 +182,7 @@ export const Home = () => {
                                 </div>
                                 <Button 
                                     className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-3 text-sm shadow-md transition-all active:scale-[0.98] btn-primary" 
-                                    onClick={() => setLocation('/videos/new')}
+                                    onClick={() => openProductionModal(departments[0])}
                                 >
                                     <Video className="mr-2" size={16} /> Create Video
                                 </Button>
@@ -290,7 +300,7 @@ export const Home = () => {
                                 key={i}
                                 variants={item}
                                 className="group relative p-6 rounded-2xl bg-white border border-slate-200 hover:border-brand/40 hover:shadow-lg hover:shadow-brand/5 transition-all w-full flex flex-col overflow-hidden cursor-pointer"
-                                onClick={() => setLocation('/videos/new')}
+                                onClick={() => openProductionModal(departments.find(d => d.name === q.title) || departments[0])}
                             >
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-110" />
                                 <div className="relative z-10">

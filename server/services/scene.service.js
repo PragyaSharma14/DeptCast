@@ -1,8 +1,7 @@
-import { Groq } from 'groq-sdk';
 import dotenv from 'dotenv';
-dotenv.config();
-
-const groq = new Groq();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 export const generateScenes = async (userPrompt, intent, template) => {
   const systemInstruction = `You are an expert AI Video Director.
@@ -23,34 +22,39 @@ Exact format required:
 ]`;
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      "messages": [
-        {
-          "role": "system",
-          "content": systemInstruction
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GEMINI_API_KEY missing");
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
         },
-        {
-          "role": "user",
-          "content": userPrompt
+        contents: [{
+          parts: [{ text: userPrompt }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
         }
-      ],
-      "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-      "temperature": 1,
-      "max_completion_tokens": 1024,
-      "top_p": 1,
-      "stream": true,
-      "stop": null
+      })
     });
 
-    let resultString = '';
-    for await (const chunk of chatCompletion) {
-      resultString += chunk.choices[0]?.delta?.content || '';
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API Error: ${response.status} ${errorText}`);
     }
+
+    const data = await response.json();
+    let resultString = data.candidates[0].content.parts[0].text;
 
     const cleanJson = resultString.replace(/```json/gi, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson);
   } catch (error) {
-    console.error("Scene Generator Error with Groq/Llama:", error);
+    console.error("Scene Generator Error with Gemini:", error);
     throw error;
   }
 };

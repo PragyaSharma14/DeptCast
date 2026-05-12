@@ -22,7 +22,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         template: null, // This is the Blueprint in UI
         dimension: '16:9',
         style: 'Hyper Realistic',
-        duration: 15,
+        duration: 4,
         customPrompt: ''
     });
     
@@ -97,6 +97,9 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         }
     };
 
+    const [draftProjectId, setDraftProjectId] = useState(null);
+    const [draftImageUrl, setDraftImageUrl] = useState(null);
+
     const handleFinalize = async () => {
         setLoading(true);
         try {
@@ -113,19 +116,37 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             const projectId = projectResult.project?._id || projectResult.project?.id;
 
             if (projectId) {
+                setDraftProjectId(projectId);
+                setStep(3); // Visual Draft step
+
                 try {
-                    const { generateVideo } = await import('../../services/api');
-                    await generateVideo(projectId);
-                } catch (err) {
-                    console.warn("Auto-gen trigger failed", err);
+                    const { generateReferenceImage } = await import('../../services/api');
+                    const imageResult = await generateReferenceImage(projectId);
+                    setDraftImageUrl(imageResult.imageUrl);
+                } catch (imgErr) {
+                    console.warn("Failed to generate image draft, proceeding to video", imgErr);
+                    await handleGenerateVideo(projectId);
                 }
-                onClose();
-                setLocation(`/videos/${projectId}`);
             }
         } catch (error) {
             console.error("Project generation failed", error);
             alert("Failed to create video project.");
         } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGenerateVideo = async (pid) => {
+        const idToUse = pid || draftProjectId;
+        setLoading(true);
+        try {
+            const { generateVideo } = await import('../../services/api');
+            await generateVideo(idToUse);
+            onClose();
+            setLocation(`/videos/${idToUse}`);
+        } catch (err) {
+            console.error("Auto-gen trigger failed", err);
+            alert("Failed to trigger video generation.");
             setLoading(false);
         }
     };
@@ -234,7 +255,8 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                  {[
                                      { s: 1, label: 'Details' },
                                      { s: 2, label: 'AI Magic' },
-                                     { s: 3, label: 'Review & Save' }
+                                     { s: 3, label: 'Visual Draft' },
+                                     { s: 4, label: 'Review & Save' }
                                  ].map((item, idx) => (
                                      <React.Fragment key={item.s}>
                                          <div className="flex flex-col items-center gap-2">
@@ -247,7 +269,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                              </div>
                                              <span className={cn("text-[10px] font-bold uppercase tracking-widest", step === item.s ? "text-slate-900" : "text-slate-400")}>{item.label}</span>
                                          </div>
-                                         {idx < 2 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-slate-900" : "bg-slate-100")} />}
+                                         {idx < 3 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-slate-900" : "bg-slate-100")} />}
                                      </React.Fragment>
                                  ))}
                             </div>
@@ -299,7 +321,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                         <Clock size={16} className="text-brand"/> Target Duration
                                                     </label>
                                                     <div className="flex gap-4">
-                                                        {[5, 10, 15].map(secs => (
+                                                        {[4, 8, 16].map(secs => (
                                                             <button
                                                                 key={secs}
                                                                 onClick={() => setConfig({...config, duration: secs})}
@@ -400,7 +422,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                     ) : (
                                                         <div className="w-full h-80 bg-white border border-slate-200 rounded-xl p-6 text-slate-700 overflow-y-auto shadow-inner prose prose-slate max-w-none prose-sm prose-headings:font-bold prose-headings:text-slate-900 prose-p:leading-relaxed prose-li:my-1">
                                                             {aiResult ? (
-                                                                <ReactMarkdown className="markdown-content">
+                                                                <ReactMarkdown>
                                                                     {aiResult}
                                                                 </ReactMarkdown>
                                                             ) : (
@@ -411,6 +433,37 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                         </div>
                                                     )}
                                                 </div>
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    ) : step === 3 ? (
+                                        <AnimatePresence mode="wait">
+                                            <motion.div 
+                                                key="step3"
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="space-y-6 flex flex-col h-full items-center justify-center pt-8"
+                                            >
+                                                {!draftImageUrl ? (
+                                                    <div className="flex flex-col items-center justify-center p-12 text-center">
+                                                        <Loader2 className="h-12 w-12 text-brand animate-spin mb-6" />
+                                                        <h3 className="text-2xl font-heading font-bold mb-2 text-slate-900">Generating Visual Draft...</h3>
+                                                        <p className="text-slate-500 font-medium">Creating a reference frame using Imagen 3 to ensure visual consistency.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center p-6 w-full max-w-2xl">
+                                                        <h3 className="text-2xl font-heading font-bold mb-4 text-slate-900">Review Visual Draft</h3>
+                                                        <div className="relative w-full aspect-video bg-slate-100 rounded-xl overflow-hidden shadow-lg mb-6 border border-slate-200">
+                                                            <img 
+                                                                src={draftImageUrl.startsWith('http') ? draftImageUrl : `http://localhost:5000${draftImageUrl}`} 
+                                                                alt="Reference" 
+                                                                className="w-full h-full object-cover" 
+                                                            />
+                                                        </div>
+                                                        <p className="text-slate-500 text-sm mb-6 text-center max-w-lg font-medium">
+                                                            This image will be used as a strict visual anchor for your entire video to ensure characters and environments remain perfectly consistent. (0.5 Credits Deducted)
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </motion.div>
                                         </AnimatePresence>
                                     ) : null}
@@ -430,13 +483,13 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                             </Button>
                                         )}
                                         <Button 
-                                            onClick={step === 1 ? handleMagic : handleFinalize}
-                                            disabled={loading}
+                                            onClick={step === 1 ? handleMagic : step === 2 ? handleFinalize : () => handleGenerateVideo()}
+                                            disabled={loading || (step === 3 && !draftImageUrl)}
                                             className="bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 px-8 py-2.5 rounded-xl font-bold h-11 active:scale-95 transition-all text-sm btn-primary"
                                         >
                                             {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : 
                                              step === 1 ? <Sparkles className="mr-2" size={18} /> : <CheckCircle2 className="mr-2" size={18} />}
-                                            {loading ? 'Processing...' : step === 1 ? 'Execute AI Magic' : 'Confirm & Produce'}
+                                            {loading ? 'Processing...' : step === 1 ? 'Execute AI Magic' : step === 2 ? 'Generate Visual Draft' : 'Confirm & Produce Video'}
                                         </Button>
                                     </div>
                                 </div>

@@ -93,11 +93,11 @@ export const VideoDetail = () => {
                 <div className="flex flex-col gap-2">
                     <button 
                         onClick={() => setLocation('/')}
-                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors w-fit"
+                        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors w-fit font-medium"
                     >
                         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
                     </button>
-                    <h1 className="text-3xl font-heading font-bold text-white tracking-tight">
+                    <h1 className="text-3xl font-heading font-bold text-slate-900 tracking-tight">
                         {project.prompt ? project.prompt.substring(0, 50) + '...' : 'Generated Video'}
                     </h1>
                     <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export const VideoDetail = () => {
                         )}>
                             {project.status}
                         </span>
-                        <span className="text-sm text-gray-500 border-l border-white/10 pl-3">
+                        <span className="text-sm text-slate-500 border-l border-slate-200 pl-3 font-medium">
                             {new Date(project.createdAt).toLocaleDateString()}
                         </span>
                     </div>
@@ -119,7 +119,7 @@ export const VideoDetail = () => {
                 {project.finalVideoUrl && (
                     <Button 
                         asChild
-                        className="bg-white text-black hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                        className="bg-brand text-white hover:bg-brand-600 shadow-md shadow-brand/20 rounded-xl"
                     >
                         <a href={getMediaUrl(project.finalVideoUrl)} download target="_blank" rel="noreferrer">
                             <Download className="mr-2 h-4 w-4" /> Download Master
@@ -133,19 +133,19 @@ export const VideoDetail = () => {
                 {/* Main Player Area */}
                 <div className="w-full space-y-6">
                     {isGenerating ? (
-                        <Card className="aspect-video flex flex-col items-center justify-center border-dashed border-2 bg-black/40 text-center p-8">
+                        <Card className="aspect-video flex flex-col items-center justify-center border-dashed border-2 border-slate-200 bg-slate-50 text-center p-8 rounded-2xl shadow-sm">
                             <div className="relative mb-6">
-                                <div className="absolute inset-0 bg-brand/20 blur-xl rounded-full scale-150 animate-pulse" />
-                                <div className="bg-darker p-4 rounded-full border border-white/10 relative">
+                                <div className="absolute inset-0 bg-brand/10 blur-xl rounded-full scale-150 animate-pulse" />
+                                <div className="bg-white p-4 rounded-full border border-slate-100 shadow-sm relative">
                                     <Loader2 className="animate-spin text-brand h-10 w-10" />
                                 </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Rendering Final Video...</h3>
-                            <p className="text-gray-400 max-w-sm">We are synthesizing the AI scenes and rendering the master file. This process may take a few minutes.</p>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Rendering Final Video...</h3>
+                            <p className="text-slate-500 max-w-sm">We are synthesizing the AI scenes and rendering the master file. This process may take a few minutes.</p>
                         </Card>
                     ) : project.finalVideoUrl ? (
-                        <Card className="overflow-hidden border border-brand/30 shadow-[0_0_40px_rgba(170,59,255,0.1)] bg-black/50">
-                            <div className="aspect-video relative group bg-black flex items-center justify-center">
+                        <Card className="overflow-hidden border border-slate-200 shadow-lg rounded-2xl bg-white p-2">
+                            <div className="aspect-video relative group bg-black flex items-center justify-center rounded-xl overflow-hidden">
                                 <video 
                                     src={getMediaUrl(project.finalVideoUrl)} 
                                     controls 
@@ -155,31 +155,31 @@ export const VideoDetail = () => {
                             </div>
                         </Card>
                     ) : isDraft ? (
-                        <Card className="aspect-video flex flex-col items-center justify-center bg-brand/5 border-brand/20 border-dashed border-2 text-center p-8">
+                        <Card className="aspect-video flex flex-col items-center justify-center bg-brand/5 border-brand/20 border-dashed border-2 text-center p-8 rounded-2xl">
                             <div className="p-4 rounded-full bg-brand/10 mb-4">
                                 <VideoIcon className="h-10 w-10 text-brand" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Script Approved</h3>
-                            <p className="text-gray-400 max-w-sm mb-6">The narration and scenes have been generated. Click below to begin the master Sora rendering.</p>
-                            <Button onClick={handleStartRender} size="lg">
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Script Approved</h3>
+                            <p className="text-slate-500 max-w-sm mb-6">The narration and scenes have been generated. Click below to begin the master rendering.</p>
+                            <Button onClick={handleStartRender} size="lg" className="bg-brand text-white shadow-md btn-primary">
                                 <Play className="mr-2 h-4 w-4" /> Commence Render
                             </Button>
                         </Card>
                     ) : isFailed ? (
-                        <Card className="aspect-video flex flex-col items-center justify-center bg-red-900/10 border-red-500/20 text-center p-8">
-                            <div className="bg-red-500/10 p-4 rounded-full mb-4">
-                                <VideoIcon className="h-10 w-10 text-red-500 opacity-50 block" />
+                        <Card className="aspect-video flex flex-col items-center justify-center bg-red-50 border-red-100 border-2 text-center p-8 rounded-2xl">
+                            <div className="bg-red-100 p-4 rounded-full mb-4">
+                                <VideoIcon className="h-10 w-10 text-red-500 block" />
                             </div>
-                            <h3 className="text-xl font-bold text-red-400 mb-2">Generation Failed</h3>
-                            <p className="text-gray-400 max-w-sm">The AI video rendering cluster encountered an error. Please adjust your prompt or try generating again later.</p>
+                            <h3 className="text-xl font-bold text-red-600 mb-2">Generation Failed</h3>
+                            <p className="text-red-400 max-w-sm">The AI video rendering cluster encountered an error. Please adjust your prompt or try generating again later.</p>
                         </Card>
                     ) : null}
 
                     {/* Meta Script info */}
-                    <Card>
-                        <CardContent className="p-6">
-                            <h3 className="text-lg font-heading font-semibold text-white mb-4">Prompt Configuration</h3>
-                            <div className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-sm text-gray-300 leading-relaxed overflow-x-auto">
+                    <Card className="border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+                        <CardContent className="p-6 bg-white">
+                            <h3 className="text-lg font-heading font-bold text-slate-900 mb-4">Prompt Configuration</h3>
+                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 font-mono text-sm text-slate-600 leading-relaxed overflow-x-auto">
                                 {project.prompt}
                             </div>
                         </CardContent>

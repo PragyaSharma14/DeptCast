@@ -19,7 +19,7 @@ The system is highly decoupled and consists of three main local services working
   - Orchestrates asynchronous polling to the OpenAI Sora API.
 
 ### 3. AutoGen Python Microservice (AI Swarm)
-- **Tech Stack:** Python, FastAPI (`uvicorn`), PyAutoGen, Groq Llama 3.
+- **Tech Stack:** Python, FastAPI (`uvicorn`), PyAutoGen, Google Gemini.
 - **Role:** Handles the complex reasoning required to write cinematic prompts.
   - **Director Agent:** Takes the user parameters and writes a structured array of detailed cinematic scenes tailored specifically to OpenAI Sora constraints.
   - **Critic Agent:** An adversarial agent that reviews the Director's output for formatting errors, missing constraints, and strict JSON compliance, forcing revisions if necessary.
@@ -27,7 +27,7 @@ The system is highly decoupled and consists of three main local services working
 
 ### 4. External APIs
 - **OpenAI Sora:** Renders the cinematic text prompts into high-quality MP4 videos.
-- **Groq API:** Powers the AutoGen agent swarm with ultra-fast Llama 3 models.
+- **Gemini API:** Powers the AutoGen agent swarm with cost-efficient Gemini 3 models.
 
 ---
 
@@ -40,7 +40,7 @@ Ensure you have the following keys in your `server/.env` file:
 ```env
 DATABASE_URL="mysql://user:password@localhost:3306/video_ai"
 OPENAI_API_KEY="your_openai_api_key_here"
-GROQ_API_KEY="your_groq_key_here"
+GEMINI_API_KEY="your_gemini_key_here"
 PORT=5000
 ```
 Note: The Python service shares this `.env` file by going up one directory.
@@ -110,6 +110,6 @@ npm run dev
 ## 💡 How the Flow Works
 1. From Terminal 3 (React), you submit a Video Request.
 2. Terminal 1 (Node.js) saves a Draft Project to MySQL, then sends the prompt to Terminal 2 (Python).
-3. Terminal 2 spins up the Groq-powered Agent Swarm to argue and refine the script, returning valid JSON to Node.js.
+3. Terminal 2 spins up the Gemini-powered Agent Swarm to argue and refine the script, returning valid JSON to Node.js.
 4. Terminal 1 saves the Scenes to MySQL, dispatches generation jobs to OpenAI Sora API, and polls the status until completed.
 5. Terminal 3 displays the final videos as they complete!

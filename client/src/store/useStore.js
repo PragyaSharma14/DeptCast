@@ -46,6 +46,12 @@ export const useStore = create(
         history: [item, ...state.history].slice(0, 50) // Keep last 50
       })),
       clearHistory: () => set({ history: [] }),
+
+      // Global Modals
+      isProductionModalOpen: false,
+      productionModalDept: null,
+      openProductionModal: (dept) => set({ isProductionModalOpen: true, productionModalDept: dept }),
+      closeProductionModal: () => set({ isProductionModalOpen: false, productionModalDept: null }),
     }),
     {
       name: 'video-gen-storage',

@@ -76,6 +76,7 @@ model Project {
   targetDuration Int          @default(8)
   status         String       @default("draft")
   finalVideoUrl  String?
+  referenceImageUrl String?
   createdAt      DateTime     @default(now())
 
   scenes         Scene[]

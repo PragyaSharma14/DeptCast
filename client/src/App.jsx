@@ -6,9 +6,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
 import { Invite } from './pages/Invite';
-import { NewVideoWizard } from './pages/videos/NewVideoWizard';
-import { Produce } from './pages/videos/Produce';
-import { Review } from './pages/videos/Review';
+
 import { VideoDetail } from './pages/videos/VideoDetail';
 import { SettingsLayout } from './pages/settings/SettingsLayout';
 import { MyBlueprints } from './pages/projects/MyBlueprints';
@@ -60,9 +58,7 @@ function App() {
             <Switch>
               <Route path="/" component={Home} />
               <Route path="/projects" component={MyBlueprints} />
-              <Route path="/videos/new" component={NewVideoWizard} />
-              <Route path="/videos/produce/:projectId" component={Produce} />
-              <Route path="/videos/review/:projectId" component={Review} />
+
               <Route path="/videos/:projectId" component={VideoDetail} />
               <Route path="/settings/:path*" component={SettingsLayout} />
               

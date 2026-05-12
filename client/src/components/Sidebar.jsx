@@ -13,11 +13,9 @@ import { ProductionModal } from './features/ProductionModal';
 
 export const Sidebar = () => {
     const [location, setLocation] = useLocation();
-    const { activeOrg, logout } = useStore();
+    const { activeOrg, logout, isProductionModalOpen, productionModalDept, openProductionModal, closeProductionModal } = useStore();
     
     const [departments, setDepartments] = useState([]);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedDepartment, setSelectedDepartment] = useState(null);
 
     useEffect(() => {
         const fetchNavData = async () => {
@@ -48,8 +46,7 @@ export const Sidebar = () => {
     ];
 
     const handleDepartmentClick = (dept) => {
-        setSelectedDepartment(dept);
-        setModalOpen(true);
+        openProductionModal(dept);
     };
 
     return (
@@ -124,7 +121,7 @@ export const Sidebar = () => {
                         <div className="px-4 py-2 text-xs text-slate-500 italic">No departments loaded.</div>
                     ) : (
                         departments.map((dept) => {
-                            const isSelected = selectedDepartment?.id === dept.id && modalOpen;
+                            const isSelected = productionModalDept?.id === dept.id && isProductionModalOpen;
                             return (
                                 <button 
                                     key={dept.id} 
@@ -155,9 +152,9 @@ export const Sidebar = () => {
             </div>
 
             <ProductionModal 
-                isOpen={modalOpen} 
-                onClose={() => setModalOpen(false)} 
-                selectedDepartment={selectedDepartment}
+                isOpen={isProductionModalOpen} 
+                onClose={() => closeProductionModal()} 
+                selectedDepartment={productionModalDept}
             />
         </aside>
     );

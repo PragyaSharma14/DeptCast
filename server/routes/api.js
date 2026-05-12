@@ -22,6 +22,23 @@ router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Test Veo 3.3 Lite via Postman
+import { generateVideoVeoAsync } from '../services/veo.service.js';
+router.post("/test-veo", async (req, res) => {
+  try {
+    const { prompt, duration = 5, resolution = "1920x1080" } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Please provide a 'prompt' in the JSON body." });
+    
+    // Call the Vertex AI Veo Service
+    const videoUrl = await generateVideoVeoAsync(prompt, duration, resolution);
+    
+    res.json({ status: "success", videoUrl });
+  } catch (error) {
+    console.error("Test Veo Error:", error);
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
 router.use('/orgs', orgRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/sectors', sectorRoutes);

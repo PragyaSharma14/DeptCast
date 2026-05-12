@@ -60,6 +60,7 @@ export const createProject = (data) => api.post('/projects', data).then(res => r
 export const generateBlueprint = (data) => api.post('/projects/generate-blueprint', data).then(res => res.data);
 export const checkBlueprintStatus = (jobId) => api.get(`/projects/generate-blueprint-status/${jobId}`).then(res => res.data);
 export const generateVideo = (projectId) => api.post(`/videos/project/${projectId}/generate`).then(res => res.data);
+export const generateReferenceImage = (projectId) => api.post(`/videos/project/${projectId}/generate-image`).then(res => res.data);
 export const regenerateScene = (sceneId, promptOverride) => api.post(`/videos/scene/${sceneId}/regenerate`, { promptOverride }).then(res => res.data);
 
 export const getDepartments = () => api.get('/departments').then(res => res.data);
