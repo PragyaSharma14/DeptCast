@@ -41,9 +41,14 @@ app.use(express.json());
 // Serve generated videos statically
 app.use('/outputs', express.static(path.join(__dirname, 'public/outputs')));
 
+// Root health check route (useful for Render deployment checks)
+app.get("/", (req, res) => {
+  res.status(200).send("Video-AI Backend is running smoothly!");
+});
+
 app.use("/api", apiRoutes);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
