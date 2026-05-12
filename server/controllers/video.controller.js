@@ -214,7 +214,7 @@ export const generateReferenceImage = async (req, res) => {
         if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
         if (!project.scenes || project.scenes.length === 0) return res.status(400).json({ error: "Project has no scenes to generate an image from." });
 
-        const CREDIT_COST = 0.5;
+        const CREDIT_COST = 1;
         
         const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
         if (org.credits < CREDIT_COST) {

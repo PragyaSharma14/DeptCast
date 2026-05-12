@@ -30,17 +30,14 @@ export const generateReferenceImageAsync = async (prompt, aspectRatio = "16:9") 
     
     try {
         const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`,
             {
                 instances: [
                     { prompt: prompt }
                 ],
                 parameters: {
                     sampleCount: 1,
-                    aspectRatio: aspectRatio,
-                    outputOptions: {
-                        mimeType: "image/jpeg"
-                    }
+                    aspectRatio: aspectRatio
                 }
             },
             {
