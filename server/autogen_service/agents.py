@@ -20,8 +20,7 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
 
     llm_config = {
         "config_list": config_list,
-        "temperature": 0.5,
-        "response_format": {"type": "json_object"}
+        "temperature": 0.5
     }
 
     style_guide = ""
