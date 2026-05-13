@@ -6,28 +6,39 @@ from dotenv import load_dotenv
 parent_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(parent_env_path)
 
-def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15) -> list:
+def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
-    # Using the standard OpenAI compatibility layer that worked before
     config_list = [{
-        "model": "gemini-2.5-flash",
+        "model": "gemini-3-flash-preview", 
         "api_key": gemini_api_key,
         "api_type": "google"
     }]
 
     llm_config = {
         "config_list": config_list,
-        "temperature": 0.5
+        "temperature": 0.4
     }
+
+    # Department-specific visual guidelines
+    dept_guides = {
+        "hr": "Visuals should feel warm, inclusive, and professional. Use natural office lighting, diverse human interactions, and soft color palettes.",
+        "marketing": "Visuals should be vibrant, energetic, and high-contrast. Use dynamic camera angles, bold branding elements, and modern urban settings.",
+        "it-support": "Visuals should be clean, tech-focused, and organized. Use cool lighting (blues/whites), futuristic interfaces, and minimalist workspaces.",
+        "finance": "Visuals should be formal, trustworthy, and precise. Use classic architecture, data visualizations, and professional business attire.",
+        "operations": "Visuals should be industrial, efficient, and active. Use factory floors, logistics hubs, and smooth motion of machinery or goods.",
+        "admin": "Visuals should be clear, corporate, and structured. Use standard office environments, organized desks, and calm atmospheres.",
+        "quality": "Visuals should be detail-oriented and clean. Use lab settings, inspection processes, and sharp, high-focus macro shots."
+    }
+    dept_guide = dept_guides.get(department.lower(), "Visuals should be professional and aligned with modern corporate aesthetics.")
 
     style_guide = ""
     if style.lower() == "cinematic":
-        style_guide = "Use photorealistic cinematic terms: volumetric lighting, anamorphic lenses, depth of field, natural professional environments, realistic human presence."
+        style_guide = "Use photorealistic cinematic terms: volumetric lighting, anamorphic lenses, shallow depth of field, natural professional environments, realistic human presence."
     else:
-        style_guide = "Use infographic and motion graphic terms: clean 2D vector illustrations, bold flat colors, kinetic typography, smooth isometric transitions, NO photorealism, isolated minimal backgrounds."
+        style_guide = "Use infographic and motion graphic terms: clean 2D vector illustrations, bold flat colors, kinetic typography, smooth isometric transitions, NO photorealism."
 
     if target_duration <= 4:
         num_scenes = 1
@@ -39,25 +50,56 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
         num_scenes = 2
         scene_duration = 8
     
-    system_message_director = f"""You are the master Visual Director and Cinematographer for a high-end corporate video production.
-Current Constraints:
-- Department Topic: {department}
-- System Prompt / Template Override: {template}
-- Video Dimension: {dimension}
-- Required Visual Style: {style.upper()}
-- Visual Directives: {style_guide}
-- Required Video Engine: Google Veo (Gemini AI Studio)
+    system_message_scriptwriter = f"""You are the Lead ScriptWriter and Storyteller for corporate communications.
+Your task is to take the user's raw prompt and transform it into a coherent, engaging storyline that prioritizes the core message.
+Current Context:
+- Department: {department}
+- Template Rules: {template}
 
-Task: Take the User's core idea and write a highly structured, cinematic list of scenes that convey the ENTIRE message.
-- Each scene must be exactly {scene_duration} seconds long. Provide exactly {num_scenes} scenes (for a total of {target_duration} seconds).
-- Each scene must have a `sceneNumber` (int), `description` (an engaging, user-facing story snippet), and a `prompt` (the literal, hidden technical visual prompt sent to Veo).
-- **THE VEO PROMPT RULE (CRITICAL)**: Google Veo requires incredibly dense, descriptive, and dynamic prompts to generate spectacular videos. Your `prompt` MUST be at least 3-4 sentences long. It MUST include:
-  1. Camera movement (e.g., "Dynamic FPV drone shot flying through...", "Slow cinematic push-in...", "Fast whip-pan from X to Y...").
-  2. A micro-story in a single shot (e.g., "Starts by showing employees analyzing a glowing chart, then the camera pans right to reveal a massive futuristic factory floor in action").
-  3. Hyper-detailed subjects, lighting (volumetric, neon, cinematic, natural), and environment descriptions.
-  4. NEVER output a basic prompt like "A modern office." It must be a breathtaking cinematic description that captures the whole essence of the '{department}' topic in a single sweeping motion.
-- **CONTINUITY RULE**: If generating multiple scenes, maintain a strict 'Visual Anchor'. Identify the primary subject and setting and REPEAT them verbatim in EVERY scene's `prompt` to ensure the stitching looks flawless.
-- Output ONLY valid JSON containing an object with a single key "scenes" which holds the array of objects.
+Task:
+1. Identify the 'Must-Have' information from the user's prompt (dates, names, specific rules).
+2. Write a short, punchy script (1-2 paragraphs) that conveys this information effectively.
+3. This script will serve as the narrative foundation for the visual director.
+4. Focus on clarity and professional tone.
+5. **CRITICAL STYLE RULE**: Your narrative MUST support a {style.upper()} aesthetic ({style_guide}). Describe visual metaphors that fit this specific style only.
+"""
+
+    scriptwriter = autogen.AssistantAgent(
+        name="ScriptWriter",
+        system_message=system_message_scriptwriter,
+        llm_config=llm_config,
+    )
+
+    system_message_director = f"""You are the master Visual Director and Cinematographer.
+Your task is to translate a script into a high-fidelity visual plan for AI generation (Imagen and Veo).
+Current Constraints:
+- Department: {department}
+- Visual Style: {style.upper()} ({style_guide})
+- Department Visual Guide: {dept_guide}
+- Video Dimension: {dimension}
+
+Task:
+1. **Storyline**: Summarize the script into a final polished storyline for the video.
+2. **Image Prompt**: Write one spectacular, dense visual prompt for a reference image (Imagen). It MUST capture the central theme and aesthetic of the entire video in a single high-fidelity shot.
+3. **Scenes**: Create exactly {num_scenes} scenes (each {scene_duration}s). Each scene needs:
+   - `sceneNumber`: int
+   - `description`: User-facing story snippet.
+   - `prompt`: A 4-5 sentence cinematic visual prompt for Google Veo. Include camera movement (drone, push-in, pan), micro-story action, and lighting details.
+
+Output ONLY valid JSON:
+{{
+  "storyline": "...",
+  "image_prompt": "...",
+  "scenes": [
+    {{ "sceneNumber": 1, "description": "...", "prompt": "..." }},
+    ...
+  ]
+}}
+
+**CRITICAL RULES**:
+- **STYLE ENFORCEMENT**: You MUST strictly adhere to the {style.upper()} style. {style_guide}.
+- **DEPARTMENT GUIDELINE**: {dept_guide}.
+- If you ignore these, the Critic will reject your work.
 """
 
     director = autogen.AssistantAgent(
@@ -66,32 +108,15 @@ Task: Take the User's core idea and write a highly structured, cinematic list of
         llm_config=llm_config,
     )
 
-    system_message_critic = f"""You are the Quality Critic. 
-Your job is to review the Director's JSON output. 
-- Ensure the JSON is an object with a "scenes" array.
-- Ensure the visual constraints ({style_guide}) are strictly adhered to.
-- Ensure all user-specified data (dates, names, facts) are preserved in the visual prompts.
-- If it looks good, reply ONLY with the exact verbatim JSON object that the Director wrote, with NO conversational text. If it's flawed, instruct the Director to fix it."""
+    system_message_critic = f"""You are the Quality Critic. Review the Director's JSON output.
+- Ensure 'storyline', 'image_prompt', and 'scenes' are all present.
+- Ensure exactly {num_scenes} scenes are provided.
+- Ensure the prompts are dense (4-5 sentences) and adhere to the {style.upper()} style and {department} guide.
+- If perfect, reply ONLY with the exact verbatim JSON. Otherwise, point out errors."""
 
     critic = autogen.AssistantAgent(
         name="Critic",
         system_message=system_message_critic,
-        llm_config=llm_config,
-    )
-
-    system_message_continuity = f"""You are the Continuity Expert.
-Your job is to ensure that the scenes generated by the Director flow together seamlessly.
-- Check that the main subjects (actors, environments) remain perfectly visually consistent across all {style.upper()} scenes.
-- **THE CONNECTION TEST**: Does Scene B logically follow Scene A? If the location changes without reason or the character disappears, REJECT and instruct the Director to maintain a logical connection.
-- Ensure the lighting and mood are identical so that when stitched together, they look like one continuous video.
-- Ensure the story snippets in `description` read like a cohesive narrative without exposing technical infra details.
-- If there are continuity errors (e.g. Scene 1 has a man in a blue shirt, Scene 2 has him in a red shirt), instruct the Director to fix it.
-- If it looks perfectly consistent, reply ONLY with the exact verbatim JSON object that the Director wrote, with NO conversational text.
-"""
-
-    continuity = autogen.AssistantAgent(
-        name="ContinuityExpert",
-        system_message=system_message_continuity,
         llm_config=llm_config,
     )
 
@@ -100,47 +125,42 @@ Your job is to ensure that the scenes generated by the Director flow together se
         human_input_mode="NEVER",
         code_execution_config=False,
         max_consecutive_auto_reply=2,
-        is_termination_msg=lambda x: "sceneNumber" in str(x.get("content", "")) and "scenes" in str(x.get("content", ""))
+        is_termination_msg=lambda x: "scenes" in str(x.get("content", "")) and "image_prompt" in str(x.get("content", ""))
     )
 
-    initial_message = f"Please draft the scenes for the following video concept: {user_prompt}"
+    initial_message = f"Please create a script and visual plan for the following: {user_prompt}"
 
     groupchat = autogen.GroupChat(
-        agents=[user_proxy, director, critic, continuity],
+        agents=[user_proxy, scriptwriter, director, critic],
         messages=[],
-        max_round=12,
+        max_round=10,
         allow_repeat_speaker=False
     )
     
     manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
-
     user_proxy.initiate_chat(manager, message=initial_message)
 
-    final_output = []
+    final_data = {
+        "storyline": "Standard corporate video.",
+        "image_prompt": f"A professional {style} visual representing {department}.",
+        "scenes": [{"sceneNumber": 1, "description": "Intro", "prompt": f"A corporate scene for {department}."}]
+    }
+
     for message in reversed(groupchat.messages):
         content = message.get("content", "")
-        if "scenes" in content and "sceneNumber" in content:
+        if "scenes" in content and "image_prompt" in content:
             try:
-                parsed = json.loads(content)
-                if "scenes" in parsed:
-                    final_output = parsed["scenes"]
-                    break
-            except Exception:
                 import re
-                match = re.search(r'\{.*"scenes"\s*:\s*\[.*\]\s*\}', content, re.DOTALL)
+                match = re.search(r'\{.*\}', content, re.DOTALL)
                 if match:
-                    try:
-                        parsed = json.loads(match.group(0))
-                        final_output = parsed.get("scenes", [])
+                    parsed = json.loads(match.group(0))
+                    if "scenes" in parsed and "image_prompt" in parsed:
+                        final_data = parsed
                         break
-                    except Exception:
-                        pass
+            except Exception:
+                pass
 
-    if not final_output:
-        print("Failed to extract JSON from conversation. Using blank fallback.")
-        final_output = [{"sceneNumber": 1, "description": "Fallback scene", "prompt": f"A standard corporate video for {department}."}]
-
-    return final_output
+    return final_data
 
 def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -148,7 +168,7 @@ def run_autogen_blueprint(department: str, style: str, template: str, dimension:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
     config_list = [{
-        "model": "gemini-2.5-flash",
+        "model": "gemini-3.1-pro-preview",
         "api_key": gemini_api_key,
         "api_type": "google"
     }]

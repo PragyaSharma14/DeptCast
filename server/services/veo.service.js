@@ -41,8 +41,8 @@ export const generateVideoVeoAsync = async (prompt, targetDuration = 5, resoluti
         console.log(`[Google AI Studio - Veo] Initiating generation via Gemini API...`);
 
         // Note: The exact model name and endpoint for Veo in Google AI Studio
-        // is typically 'veo-2.0-generate-001' or 'veo-3.1-generate-preview'
-        const modelName = "veo-3.1-lite-generate-preview";
+        // is typically 'veo-3.1-generate-preview' as of May 2026
+        const modelName = "veo-3.1-generate-preview";
 
         const instanceData = { prompt: prompt };
         
@@ -79,7 +79,7 @@ export const generateVideoVeoAsync = async (prompt, targetDuration = 5, resoluti
                 instances: [instanceData],
                 parameters: {
                     aspectRatio: aspectRatio,
-                    durationSeconds: targetDuration
+                    // durationSeconds: targetDuration
                 }
             },
             {

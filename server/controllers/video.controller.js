@@ -222,7 +222,8 @@ export const generateReferenceImage = async (req, res) => {
         }
 
         // Use the first scene's prompt as the visual anchor
-        const scenePrompt = project.scenes[0].prompt;
+        // Use the specialized imagePrompt if available, otherwise fallback to the first scene's prompt
+        const scenePrompt = project.imagePrompt || (project.scenes?.[0]?.prompt) || "A professional corporate visual";
 
         const dimensionMap = {
             "16:9": "16:9",

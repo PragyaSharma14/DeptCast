@@ -38,7 +38,7 @@ async def verify_api_key(x_api_secret: str = Header(None)):
 async def generate_script(req: VideoGenerationRequest):
     try:
         print(f"Received request for {req.department} with prompt: {req.prompt}")
-        scenes = run_autogen_workflow(
+        result = run_autogen_workflow(
             department=req.department,
             style=req.style,
             template=req.template,
@@ -46,7 +46,7 @@ async def generate_script(req: VideoGenerationRequest):
             user_prompt=req.prompt,
             target_duration=req.targetDuration
         )
-        return {"status": "success", "scenes": scenes}
+        return {"status": "success", **result}
     except Exception as e:
         error_msg = str(e).lower()
         print(f"Error in AutoGen workflow: {str(e)}")

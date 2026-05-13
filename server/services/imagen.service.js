@@ -29,8 +29,9 @@ export const generateReferenceImageAsync = async (prompt, aspectRatio = "16:9") 
     // Gemini API for Imagen typically accepts aspect_ratio as "16:9", "1:1", "3:4", "4:3", "9:16"
     
     try {
+        const modelName = "imagen-4.0-generate-001";
         const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${API_KEY}`,
             {
                 instances: [
                     { prompt: prompt }

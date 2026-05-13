@@ -77,6 +77,8 @@ model Project {
   status         String       @default("draft")
   finalVideoUrl  String?
   referenceImageUrl String?
+  storyline      String?      @db.Text
+  imagePrompt    String?      @db.Text
   createdAt      DateTime     @default(now())
 
   scenes         Scene[]
