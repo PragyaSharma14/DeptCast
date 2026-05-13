@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { 
-    LayoutDashboard, PlusCircle, Folder, 
-    BarChart, Video, Building2, Users, 
+import {
+    LayoutDashboard, PlusCircle, Folder,
+    BarChart, Video, Building2, Users,
     LogOut, ChevronDown, CheckCircle2,
     Shield
 } from 'lucide-react';
@@ -14,7 +14,7 @@ import { ProductionModal } from './features/ProductionModal';
 export const Sidebar = () => {
     const [location, setLocation] = useLocation();
     const { activeOrg, logout, isProductionModalOpen, productionModalDept, openProductionModal, closeProductionModal } = useStore();
-    
+
     const [departments, setDepartments] = useState([]);
 
     useEffect(() => {
@@ -24,7 +24,7 @@ export const Sidebar = () => {
                 // We expect data to be an array of sectors, but since we filtered it to IT,
                 // it should just be one sector or we can just flatten the departments
                 if (data && data.length > 0) {
-                    const itSector = data[0]; 
+                    const itSector = data[0];
                     setDepartments(itSector.departments || []);
                 }
             } catch (err) {
@@ -36,7 +36,7 @@ export const Sidebar = () => {
 
     const menuItems = [
         { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-        { name: 'My Blueprints', icon: Folder, path: '/projects' },
+        { name: 'My Videos', icon: Folder, path: '/projects' },
         { name: 'Analytics', icon: BarChart, path: '/analytics' },
     ];
 
@@ -76,8 +76,8 @@ export const Sidebar = () => {
                             <Link key={item.name} href={item.path}>
                                 <div className={cn(
                                     "flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all group cursor-pointer",
-                                    active 
-                                        ? "bg-brand text-white shadow-md shadow-brand/20" 
+                                    active
+                                        ? "bg-brand text-white shadow-md shadow-brand/20"
                                         : "text-slate-600 hover:text-brand hover:bg-brand/5"
                                 )}>
                                     <item.icon size={18} className={cn(active ? "text-white" : "text-slate-400 group-hover:text-brand")} />
@@ -97,8 +97,8 @@ export const Sidebar = () => {
                             <Link key={item.name} href={item.path}>
                                 <div className={cn(
                                     "flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all group cursor-pointer",
-                                    active 
-                                        ? "bg-brand text-white shadow-md shadow-brand/20" 
+                                    active
+                                        ? "bg-brand text-white shadow-md shadow-brand/20"
                                         : "text-slate-600 hover:text-brand hover:bg-brand/5"
                                 )}>
                                     <item.icon size={18} className={cn(active ? "text-white" : "text-slate-400 group-hover:text-brand")} />
@@ -123,8 +123,8 @@ export const Sidebar = () => {
                         departments.map((dept) => {
                             const isSelected = productionModalDept?.id === dept.id && isProductionModalOpen;
                             return (
-                                <button 
-                                    key={dept.id} 
+                                <button
+                                    key={dept.id}
                                     onClick={() => handleDepartmentClick(dept)}
                                     className={cn(
                                         "flex items-center gap-3 w-full px-4 py-2 rounded-lg text-[13px] transition-all text-left group",
@@ -142,7 +142,7 @@ export const Sidebar = () => {
 
             {/* Bottom Section */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
-                <button 
+                <button
                     onClick={() => logout()}
                     className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 transition-all text-left"
                 >
@@ -151,9 +151,9 @@ export const Sidebar = () => {
                 </button>
             </div>
 
-            <ProductionModal 
-                isOpen={isProductionModalOpen} 
-                onClose={() => closeProductionModal()} 
+            <ProductionModal
+                isOpen={isProductionModalOpen}
+                onClose={() => closeProductionModal()}
                 selectedDepartment={productionModalDept}
             />
         </aside>

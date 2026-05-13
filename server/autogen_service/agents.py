@@ -61,7 +61,11 @@ Task:
 2. Write a short, punchy script (1-2 paragraphs) that conveys this information effectively.
 3. This script will serve as the narrative foundation for the visual director.
 4. Focus on clarity and professional tone.
-5. **CRITICAL STYLE RULE**: Your narrative MUST support a {style.upper()} aesthetic ({style_guide}). Describe visual metaphors that fit this specific style only.
+5. **SCRIPT LENGTH CALIBRATION**: Your script MUST be tailored to the target duration of {target_duration} seconds.
+   - For 4s: ~10-15 words.
+   - For 8s: ~25-30 words.
+   - For 16s: ~50-60 words.
+6. **CRITICAL STYLE RULE**: Your narrative MUST support a {style.upper()} aesthetic ({style_guide}). Describe visual metaphors that fit this specific style only.
 """
 
     scriptwriter = autogen.AssistantAgent(
@@ -80,11 +84,17 @@ Current Constraints:
 
 Task:
 1. **Storyline**: Summarize the script into a final polished storyline for the video.
-2. **Image Prompt**: Write one spectacular, dense visual prompt for a reference image (Imagen). It MUST capture the central theme and aesthetic of the entire video in a single high-fidelity shot.
+2. **Image Prompt**: Write one spectacular, dense visual prompt for a reference image (Imagen). 
+   - **SUBJECT FOCUS**: For {department.upper()} in {style.upper()} style, you MUST include a high-fidelity, professional person/subject in a modern environment.
+   - **AESTHETIC**: Capture the central theme and aesthetic of the entire video in a single high-fidelity shot.
 3. **Scenes**: Create exactly {num_scenes} scenes (each {scene_duration}s). Each scene needs:
    - `sceneNumber`: int
    - `description`: User-facing story snippet.
-   - `prompt`: A 4-5 sentence cinematic visual prompt for Google Veo. Include camera movement (drone, push-in, pan), micro-story action, and lighting details.
+   - `prompt`: **DIRECTING, NOT DESCRIBING**. Since the reference image handles the subject and setting:
+     - DO NOT describe the background, furniture, or clothes again.
+     - DO focus on **Action and Motion** (e.g., 'The person turns and gestures toward the screen,' 'A slow cinematic zoom-in on the hands typing').
+     - DO focus on **Camera Movement** (e.g., 'A smooth drone-style push-in').
+     - Include lighting changes if applicable.
 
 Output ONLY valid JSON:
 {{
@@ -111,7 +121,8 @@ Output ONLY valid JSON:
     system_message_critic = f"""You are the Quality Critic. Review the Director's JSON output.
 - Ensure 'storyline', 'image_prompt', and 'scenes' are all present.
 - Ensure exactly {num_scenes} scenes are provided.
-- Ensure the prompts are dense (4-5 sentences) and adhere to the {style.upper()} style and {department} guide.
+- Ensure the prompts are focused on **Motion and Action** and do NOT repeat background descriptions from the image_prompt.
+- Ensure the script length matches the target duration.
 - If perfect, reply ONLY with the exact verbatim JSON. Otherwise, point out errors."""
 
     critic = autogen.AssistantAgent(
@@ -168,7 +179,7 @@ def run_autogen_blueprint(department: str, style: str, template: str, dimension:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
     config_list = [{
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-3-flash-preview",
         "api_key": gemini_api_key,
         "api_type": "google"
     }]
