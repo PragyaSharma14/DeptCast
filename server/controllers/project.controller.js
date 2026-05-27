@@ -5,7 +5,7 @@ import { generateScenes } from '../services/scene.service.js';
 
 export const generateBlueprint = async (req, res) => {
     try {
-        const { department, templateId, style, additionalPrompt } = req.body;
+        const { department, templateId, style, additionalPrompt, avatar } = req.body;
 
         let templateSystemPrompt = "Standard corporate communication";
         if (templateId) {
@@ -34,7 +34,8 @@ export const generateBlueprint = async (req, res) => {
                 department: department || 'General',
                 style: style || 'Cinematic',
                 template: templateSystemPrompt,
-                dimension: '16:9'
+                dimension: '16:9',
+                avatar: avatar || null
             })
         }).catch(err => {
             console.error(`[AI SERVICE] Network Error:`, err.message);
@@ -56,7 +57,8 @@ export const generateBlueprint = async (req, res) => {
                     department: department || 'General',
                     style: style || 'Cinematic',
                     template: templateSystemPrompt,
-                    dimension: '16:9'
+                    dimension: '16:9',
+                    avatar: avatar || null
                 })
             }).catch(err => { throw new Error(`AI Service unreachable after retry.`); });
         }
@@ -112,7 +114,7 @@ export const checkBlueprintStatus = async (req, res) => {
 
 export const createProject = async (req, res) => {
     try {
-        const { additionalPrompt, department, templateId, style, dimension, targetDuration } = req.body;
+        const { additionalPrompt, department, templateId, style, dimension, targetDuration, referenceImageUrl } = req.body;
 
         // Retrieve Template from DB
         let templateSystemPrompt = "Standard corporate communication";
@@ -135,6 +137,7 @@ export const createProject = async (req, res) => {
                 templateId: templateId || null,
                 dimension: dimension,
                 targetDuration: targetDuration || 8,
+                referenceImageUrl: referenceImageUrl || null,
                 status: 'draft'
             }
         });
@@ -152,7 +155,8 @@ export const createProject = async (req, res) => {
                 style: style || 'Cinematic',
                 template: templateSystemPrompt,
                 dimension: dimension || '16:9',
-                targetDuration: targetDuration || 15
+                targetDuration: targetDuration || 15,
+                avatar: referenceImageUrl && referenceImageUrl.includes('girl') ? 'girl' : (referenceImageUrl ? 'boy' : null)
             }),
             signal: AbortSignal.timeout(300000) // 120 seconds timeout
         });

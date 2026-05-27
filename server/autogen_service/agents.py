@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 parent_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(parent_env_path)
 
-def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15) -> dict:
+def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15, avatar: str = None) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
@@ -50,11 +50,13 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
         num_scenes = 2
         scene_duration = 8
     
+    avatar_hint = f"\n- Selected Avatar: A {avatar} presenter." if avatar else ""
+
     system_message_scriptwriter = f"""You are the Lead ScriptWriter and Storyteller for corporate communications.
 Your task is to take the user's raw prompt and transform it into a coherent, engaging storyline that prioritizes the core message.
 Current Context:
 - Department: {department}
-- Template Rules: {template}
+- Template Rules: {template}{avatar_hint}
 
 Task:
 1. Identify the 'Must-Have' information from the user's prompt (dates, names, specific rules).
@@ -76,7 +78,7 @@ Current Constraints:
 - Department: {department}
 - Visual Style: {style.upper()} ({style_guide})
 - Department Visual Guide: {dept_guide}
-- Video Dimension: {dimension}
+- Video Dimension: {dimension}{avatar_hint}
 
 Task:
 1. **Storyline**: Summarize the script into a final polished storyline for the video.
@@ -162,13 +164,13 @@ Output ONLY valid JSON:
 
     return final_data
 
-def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str) -> str:
+def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, avatar: str = None) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
 
     config_list = [{
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-3-flash-preview",
         "api_key": gemini_api_key,
         "api_type": "google"
     }]
@@ -184,6 +186,7 @@ Current Constraints:
 - System Prompt / Template Override: {template}
 - Video Dimension: {dimension}
 - Required Visual Style: {style.upper()}
+{f"- Selected Avatar: A {avatar} presenter." if avatar else ""}
 
 Task: Take the User's core idea and write a structured "Strategic Video Blueprint".
 Format it strictly exactly like this (use markdown):

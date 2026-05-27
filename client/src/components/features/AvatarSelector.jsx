@@ -2,11 +2,8 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 const AVATARS = [
-  { id: 'alex', name: 'Alex', role: 'Corporate Presenter', seed: 'Alex' },
-  { id: 'priya', name: 'Priya', role: 'HR Specialist', seed: 'Priya' },
-  { id: 'james', name: 'James', role: 'IT Lead', seed: 'James' },
-  { id: 'sarah', name: 'Sarah', role: 'Marketing', seed: 'Sarah' },
-  { id: 'default', name: 'Custom Avatars', role: 'Pro Feature', seed: 'Oliver' },
+  { id: 'boy', name: 'Boy Avatar', role: 'Presenter', image: '/avatars/Alex_Avatar.png' },
+  { id: 'girl', name: 'Girl Avatar', role: 'Presenter', image: '/avatars/girl.png' }
 ];
 
 export const AvatarSelector = ({ selectedId, onSelect }) => {
@@ -34,10 +31,10 @@ export const AvatarSelector = ({ selectedId, onSelect }) => {
             >
               <div className="p-4 flex flex-col items-center">
                 <img 
-                  src={`https://api.dicebear.com/9.x/notionists/svg?seed=${avatar.seed}&backgroundColor=transparent`} 
+                  src={avatar.image} 
                   alt={avatar.name}
                   className={cn(
-                    "w-24 h-24 duration-300 transition-transform",
+                    "w-24 h-24 object-contain duration-300 transition-transform",
                     isSelected ? "scale-110 drop-shadow-md" : "group-hover:scale-105"
                   )}
                 />

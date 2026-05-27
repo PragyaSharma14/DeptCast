@@ -23,6 +23,7 @@ class VideoGenerationRequest(BaseModel):
     style: str
     template: str
     targetDuration: Optional[int] = 15
+    avatar: Optional[str] = None
 
 
 
@@ -44,7 +45,8 @@ async def generate_script(req: VideoGenerationRequest):
             template=req.template,
             dimension=req.dimension,
             user_prompt=req.prompt,
-            target_duration=req.targetDuration
+            target_duration=req.targetDuration,
+            avatar=req.avatar
         )
         return {"status": "success", **result}
     except Exception as e:
@@ -64,7 +66,8 @@ def run_blueprint_task(job_id: str, req: VideoGenerationRequest):
             style=req.style,
             template=req.template,
             dimension=req.dimension,
-            user_prompt=req.prompt
+            user_prompt=req.prompt,
+            avatar=req.avatar
         )
         JOBS[job_id]["status"] = "completed"
         JOBS[job_id]["result"] = blueprint

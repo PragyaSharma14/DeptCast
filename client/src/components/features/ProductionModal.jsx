@@ -11,6 +11,7 @@ import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { generateBlueprint, createProject } from '../../services/api';
 import { DimensionSelector } from './DimensionSelector';
+import { AvatarSelector } from './AvatarSelector';
 
 export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
     const [step, setStep] = useState(1);
@@ -23,7 +24,8 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         dimension: '16:9',
         style: 'Hyper Realistic',
         duration: 4,
-        customPrompt: ''
+        customPrompt: '',
+        avatar: null
     });
     
     const [aiResult, setAiResult] = useState('');
@@ -39,7 +41,8 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 customPrompt: '',
                 dimension: '16:9',
                 style: 'Hyper Realistic',
-                duration: 15
+                duration: 15,
+                avatar: null
             }));
             setAiResult('');
         }
@@ -55,7 +58,8 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 templateId: config.template?.id,
                 style: config.style,
                 dimension: config.dimension,
-                additionalPrompt: config.customPrompt || "Standard generation without additional constraints."
+                additionalPrompt: config.customPrompt || "Standard generation without additional constraints.",
+                avatar: config.avatar
             });
             
             if (!result.jobId) throw new Error("Failed to initialize AI Job.");
@@ -111,7 +115,8 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 dimension: config.dimension,
                 targetDuration: parseInt(config.duration),
                 intent: config.template?.title || 'Unknown',
-                additionalPrompt: finalPrompt
+                additionalPrompt: finalPrompt,
+                referenceImageUrl: config.avatar ? `/avatars/${config.avatar === 'boy' ? 'Alex_Avatar' : 'girl'}.png` : null
             });
             const projectId = projectResult.project?._id || projectResult.project?.id;
 
@@ -345,6 +350,16 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                     <DimensionSelector 
                                                         selectedId={config.dimension} 
                                                         onSelect={(id) => setConfig({...config, dimension: id})} 
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <label className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <UserCheck size={16} className="text-brand"/> Avatar Intelligence
+                                                    </label>
+                                                    <AvatarSelector 
+                                                        selectedId={config.avatar} 
+                                                        onSelect={(id) => setConfig({...config, avatar: id})} 
                                                     />
                                                 </div>
 
