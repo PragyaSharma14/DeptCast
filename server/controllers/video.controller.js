@@ -81,6 +81,12 @@ export const generateVideo = async (req, res) => {
                 // 2. Call Veo in parallel for each scene
                 const videoPromises = scenes.map(async (scene) => {
                     try {
+                        console.log("\n=======================================================");
+                        console.log(`🎬 [VEO PROMPT] Scene ${scene.sceneNumber} 🎬`);
+                        console.log(`Prompt text sent to Veo:`);
+                        console.log(`${scene.prompt}`);
+                        console.log("=======================================================\n");
+                        
                         const videoUrl = await generateVideoVeoAsync(scene.prompt, perSceneDuration, videoRes, project.referenceImageUrl);
                         
                         // Update individual scene status
@@ -214,9 +220,20 @@ export const generateReferenceImage = async (req, res) => {
         if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
         if (!project.scenes || project.scenes.length === 0) return res.status(400).json({ error: "Project has no scenes to generate an image from." });
 
+        const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
+
+        // If the project already has a reference image (e.g., an Avatar was selected), skip AI generation
+        if (project.referenceImageUrl) {
+            console.log(`[Image Draft] Project ${projectId} already has an avatar/reference image. Skipping AI generation.`);
+            return res.status(200).json({ 
+                message: "Using pre-selected avatar", 
+                imageUrl: project.referenceImageUrl,
+                creditsRemaining: org.credits // No credits deducted
+            });
+        }
+
         const CREDIT_COST = 1;
         
-        const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
         if (org.credits < CREDIT_COST) {
             return res.status(402).json({ error: `Insufficient credits. Generating a reference image requires ${CREDIT_COST} credits.` });
         }
