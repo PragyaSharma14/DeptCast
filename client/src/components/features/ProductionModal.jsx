@@ -9,9 +9,10 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
-import { generateBlueprint, createProject } from '../../services/api';
 import { DimensionSelector } from './DimensionSelector';
 import { AvatarSelector } from './AvatarSelector';
+import { useStore } from '../../store/useStore';
+import { generateBlueprint, checkBlueprintStatus, createProject, generateVideo } from '../../services/api';
 
 export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
     const [step, setStep] = useState(1);
@@ -30,6 +31,19 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
     
     const [aiResult, setAiResult] = useState('');
     const [isEditingTemplate, setIsEditingTemplate] = useState(false);
+    const activeOrg = useStore(state => state.activeOrg);
+    const [swarmProgress, setSwarmProgress] = useState(0);
+
+    // Simulate swarm progress
+    useEffect(() => {
+        if (step === 2 && !aiResult) {
+            setSwarmProgress(0);
+            const interval = setInterval(() => {
+                setSwarmProgress(prev => (prev < 4 ? prev + 1 : prev));
+            }, 2500);
+            return () => clearInterval(interval);
+        }
+    }, [step, aiResult]);
 
     // Reset when modal opens with a new department
     useEffect(() => {
@@ -67,7 +81,6 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             setStep(2); // Move to loading screen immediately
             
             // Start polling the backend for completion
-            const { checkBlueprintStatus } = await import('../../services/api');
             let attempts = 0;
             const maxAttempts = 40; // 40 * 3 seconds = 120 seconds total
             let blueprintText = "";
@@ -121,22 +134,12 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             const projectId = projectResult.project?._id || projectResult.project?.id;
 
             if (projectId) {
-                setDraftProjectId(projectId);
-                setStep(3); // Visual Draft step
-
-                try {
-                    const { generateReferenceImage } = await import('../../services/api');
-                    const imageResult = await generateReferenceImage(projectId);
-                    setDraftImageUrl(imageResult.imageUrl);
-                } catch (imgErr) {
-                    console.warn("Failed to generate image draft, proceeding to video", imgErr);
-                    await handleGenerateVideo(projectId);
-                }
+                // Skip Visual Draft, go straight to video generation
+                await handleGenerateVideo(projectId);
             }
         } catch (error) {
             console.error("Project generation failed", error);
             alert("Failed to create video project.");
-        } finally {
             setLoading(false);
         }
     };
@@ -145,7 +148,6 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         const idToUse = pid || draftProjectId;
         setLoading(true);
         try {
-            const { generateVideo } = await import('../../services/api');
             await generateVideo(idToUse);
             onClose();
             setLocation(`/videos/${idToUse}`);
@@ -260,8 +262,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                  {[
                                      { s: 1, label: 'Details' },
                                      { s: 2, label: 'AI Magic' },
-                                     { s: 3, label: 'Visual Draft' },
-                                     { s: 4, label: 'Review & Save' }
+                                     { s: 3, label: 'Produce Video' }
                                  ].map((item, idx) => (
                                      <React.Fragment key={item.s}>
                                          <div className="flex flex-col items-center gap-2">
@@ -274,7 +275,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                              </div>
                                              <span className={cn("text-[10px] font-bold uppercase tracking-widest", step === item.s ? "text-slate-900" : "text-slate-400")}>{item.label}</span>
                                          </div>
-                                         {idx < 3 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-slate-900" : "bg-slate-100")} />}
+                                         {idx < 2 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-slate-900" : "bg-slate-100")} />}
                                      </React.Fragment>
                                  ))}
                             </div>
@@ -396,6 +397,30 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                     </div>
                                                 </div>
 
+                                                {/* Credit Transparency Breakdown */}
+                                                <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                                                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center justify-between">
+                                                        <span>Estimated Cost Breakdown</span>
+                                                        <span className={cn("px-2 py-1 rounded-md text-[10px]", (activeOrg?.credits || 0) < config.duration ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600")}>
+                                                            {activeOrg?.credits || 0} Credits Available
+                                                        </span>
+                                                    </h4>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex justify-between text-slate-600">
+                                                            <span>Script & AI Orchestration</span>
+                                                            <span className="font-medium text-emerald-600">Free</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-slate-600">
+                                                            <span>Video Render ({config.duration}s)</span>
+                                                            <span className="font-medium">{config.duration} Credits</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="pt-3 border-t border-slate-200 flex justify-between font-bold text-slate-900">
+                                                        <span>Total Estimated Cost</span>
+                                                        <span>{config.duration} Credits</span>
+                                                    </div>
+                                                </div>
+
                                             </motion.div>
                                         </AnimatePresence>
                                     ) : step === 2 ? (
@@ -441,44 +466,27 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                                     {aiResult}
                                                                 </ReactMarkdown>
                                                             ) : (
-                                                                <div className="h-full flex items-center justify-center text-slate-400 italic">
-                                                                    Waiting for AI synthesis...
+                                                                <div className="h-full flex flex-col items-center justify-center space-y-5">
+                                                                    {[
+                                                                        "🔍 Analyzing requirements and guidelines...",
+                                                                        "🤖 Consulting Director Agent...",
+                                                                        "⚖️ Evaluating script with Critic Agent...",
+                                                                        "✍️ Refining scene transitions & dialogues...",
+                                                                        "✨ Synthesizing final video blueprint..."
+                                                                    ].map((msg, idx) => (
+                                                                        <div key={idx} className={cn(
+                                                                            "text-sm transition-all duration-500 font-medium flex items-center gap-3",
+                                                                            swarmProgress > idx ? "text-slate-900" : swarmProgress === idx ? "text-brand animate-pulse scale-105" : "text-slate-300 opacity-50"
+                                                                        )}>
+                                                                            {swarmProgress > idx ? <CheckCircle2 size={16} className="text-emerald-500" /> : swarmProgress === idx ? <Loader2 size={16} className="animate-spin" /> : <div className="w-4 h-4" />}
+                                                                            {msg}
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             )}
                                                         </div>
                                                     )}
                                                 </div>
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    ) : step === 3 ? (
-                                        <AnimatePresence mode="wait">
-                                            <motion.div 
-                                                key="step3"
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="space-y-6 flex flex-col h-full items-center justify-center pt-8"
-                                            >
-                                                {!draftImageUrl ? (
-                                                    <div className="flex flex-col items-center justify-center p-12 text-center">
-                                                        <Loader2 className="h-12 w-12 text-brand animate-spin mb-6" />
-                                                        <h3 className="text-2xl font-heading font-bold mb-2 text-slate-900">Generating Visual Draft...</h3>
-                                                        <p className="text-slate-500 font-medium">Creating a reference frame using Imagen 3 to ensure visual consistency.</p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center p-6 w-full max-w-2xl">
-                                                        <h3 className="text-2xl font-heading font-bold mb-4 text-slate-900">Review Visual Draft</h3>
-                                                        <div className="relative w-full aspect-video bg-slate-100 rounded-xl overflow-hidden shadow-lg mb-6 border border-slate-200">
-                                                            <img 
-                                                                src={draftImageUrl.startsWith('http') ? draftImageUrl : `http://localhost:5000${draftImageUrl}`} 
-                                                                alt="Reference" 
-                                                                className="w-full h-full object-cover" 
-                                                            />
-                                                        </div>
-                                                        <p className="text-slate-500 text-sm mb-6 text-center max-w-lg font-medium">
-                                                            This image will be used as a strict visual anchor for your entire video to ensure characters and environments remain perfectly consistent. (0.5 Credits Deducted)
-                                                        </p>
-                                                    </div>
-                                                )}
                                             </motion.div>
                                         </AnimatePresence>
                                     ) : null}
@@ -498,13 +506,16 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                             </Button>
                                         )}
                                         <Button 
-                                            onClick={step === 1 ? handleMagic : step === 2 ? handleFinalize : () => handleGenerateVideo()}
-                                            disabled={loading || (step === 3 && !draftImageUrl)}
-                                            className="bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 px-8 py-2.5 rounded-xl font-bold h-11 active:scale-95 transition-all text-sm btn-primary"
+                                            onClick={step === 1 ? handleMagic : handleFinalize}
+                                            disabled={loading || (step === 1 && (activeOrg?.credits || 0) < config.duration)}
+                                            className={cn(
+                                                "bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 px-8 py-2.5 rounded-xl font-bold h-11 transition-all text-sm btn-primary",
+                                                !loading && (step === 1 && (activeOrg?.credits || 0) < config.duration) ? "opacity-50 cursor-not-allowed bg-slate-300 shadow-none hover:bg-slate-300" : "active:scale-95"
+                                            )}
                                         >
                                             {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : 
                                              step === 1 ? <Sparkles className="mr-2" size={18} /> : <CheckCircle2 className="mr-2" size={18} />}
-                                            {loading ? 'Processing...' : step === 1 ? 'Execute AI Magic' : step === 2 ? 'Generate Visual Draft' : 'Confirm & Produce Video'}
+                                            {loading ? 'Processing...' : step === 1 ? 'Execute AI Magic' : 'Produce Video'}
                                         </Button>
                                     </div>
                                 </div>

@@ -7,11 +7,11 @@ export const generateBlueprint = async (req, res) => {
     try {
         const { department, templateId, style, additionalPrompt, avatar } = req.body;
 
-        let templateSystemPrompt = "Standard corporate communication";
+        let templateSystemPrompt = "Standard generation";
         if (templateId) {
             const dbTemplate = await prisma.template.findUnique({ where: { id: templateId } });
             if (dbTemplate) {
-                templateSystemPrompt = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
+                templateSystemPrompt = `Intent/Topic: ${dbTemplate.title}`;
             }
         }
 
@@ -117,11 +117,11 @@ export const createProject = async (req, res) => {
         const { additionalPrompt, department, templateId, style, dimension, targetDuration, referenceImageUrl } = req.body;
 
         // Retrieve Template from DB
-        let templateSystemPrompt = "Standard corporate communication";
+        let templateSystemPrompt = "Standard generation";
         if (templateId) {
             const dbTemplate = await prisma.template.findUnique({ where: { id: templateId } });
             if (dbTemplate) {
-                templateSystemPrompt = `Template Title: ${dbTemplate.title}\nTemplate Rules: ${dbTemplate.systemPrompt}\nKey Points: ${dbTemplate.keyPoints}`;
+                templateSystemPrompt = `Intent/Topic: ${dbTemplate.title}`;
             }
         }
 
@@ -142,49 +142,18 @@ export const createProject = async (req, res) => {
             }
         });
 
-        const autogenUrl = process.env.AUTOGEN_URL || 'http://localhost:8000';
-        const response = await fetch(`${autogenUrl}/generate-script`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
-            },
-            body: JSON.stringify({
-                prompt: initialIntent,
-                department: department || 'General',
-                style: style || 'Cinematic',
-                template: templateSystemPrompt,
-                dimension: dimension || '16:9',
-                targetDuration: targetDuration || 15,
-                avatar: referenceImageUrl && referenceImageUrl.includes('girl') ? 'girl' : (referenceImageUrl ? 'boy' : null)
-            }),
-            signal: AbortSignal.timeout(300000) // 120 seconds timeout
-        });
+        // We bypass /generate-script completely. The `additionalPrompt` is the exact Veo command generated during the AI Magic step.
+        const storyline = `Direct command generation for ${department} department.`;
+        const imagePrompt = `Visual representing ${department}.`;
+        const promptText = initialIntent; // The finalized prompt from the UI
 
-        if (!response.ok) {
-            const status = response.status;
-            const errorText = await response.text();
-
-            // Handle Quota/Credit errors specifically
-            if (status === 402 || status === 429) {
-                return res.status(status).json({
-                    error: "Insufficient AI Credits",
-                    code: "CREDITS_EXHAUSTED",
-                    details: "Your API quota for AI script generation has been exceeded."
-                });
+        let structuredScenesInfo = [
+            {
+                sceneNumber: 1,
+                description: "AI Generated Scene",
+                prompt: promptText
             }
-
-            throw new Error(`AutoGen Microservice failed: ${errorText}`);
-        }
-
-        const result = await response.json();
-        const storyline = result.storyline || "";
-        const imagePrompt = result.image_prompt || "";
-        let structuredScenesInfo = result.scenes || [];
-
-        if (!Array.isArray(structuredScenesInfo)) {
-            structuredScenesInfo = [structuredScenesInfo];
-        }
+        ];
 
         // Update Project with storyline and imagePrompt
         await prisma.project.update({

@@ -52,6 +52,12 @@ export const useStore = create(
       productionModalDept: null,
       openProductionModal: (dept) => set({ isProductionModalOpen: true, productionModalDept: dept }),
       closeProductionModal: () => set({ isProductionModalOpen: false, productionModalDept: null }),
+      
+      // Avatar State
+      customAvatars: [],
+      addCustomAvatar: (avatar) => set((state) => ({ 
+        customAvatars: [...state.customAvatars, avatar] 
+      })),
     }),
     {
       name: 'video-gen-storage',
@@ -59,8 +65,9 @@ export const useStore = create(
         history: state.history,
         token: state.token,
         user: state.user,
-        activeOrg: state.activeOrg
-      }), // Persist auth and history
+        activeOrg: state.activeOrg,
+        customAvatars: state.customAvatars
+      }), // Persist auth, history, and custom avatars
     }
   )
 );

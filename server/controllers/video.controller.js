@@ -83,7 +83,7 @@ export const generateVideo = async (req, res) => {
                     try {
                         console.log("\n=======================================================");
                         console.log(`🎬 [VEO PROMPT] Scene ${scene.sceneNumber} 🎬`);
-                        console.log(`Prompt text sent to Veo:`);
+                        console.log(`Final Prompt text that WOULD be sent to Veo:`);
                         console.log(`${scene.prompt}`);
                         console.log("=======================================================\n");
                         
@@ -179,6 +179,12 @@ export const regenerateScene = async (req, res) => {
         (async () => {
             try {
                 const finalPrompt = buildCinematicPrompt(promptOverride || scene.prompt, { tone: project.style }, template);
+                
+                console.log("\n=======================================================");
+                console.log("[FINAL VEO PROMPT SENT TO GEMINI (REGENERATE)]");
+                console.log(finalPrompt);
+                console.log("=======================================================\n");
+
                 const videoUrl = await generateVideoVeoAsync(finalPrompt, 5, "1920x1080");
                 
                 await prisma.scene.update({
