@@ -6,6 +6,4 @@ python-dotenv
 pydantic
 google-generativeai
 google-genai
-google-cloud-aiplatform
 jsonschema
-google-cloud-bigquery>=3.20.0
