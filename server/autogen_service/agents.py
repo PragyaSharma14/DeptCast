@@ -14,7 +14,8 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
     config_list = [{
         "model": "gemini-3.1-flash-lite-preview", 
         "api_key": gemini_api_key,
-        "api_type": "google"
+        "api_type": "openai",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
     }]
 
     llm_config = {
@@ -152,7 +153,8 @@ def run_autogen_blueprint(department: str, style: str, template: str, dimension:
     config_list = [{
         "model": "gemini-3.1-flash-lite-preview",
         "api_key": gemini_api_key,
-        "api_type": "google"
+        "api_type": "openai",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
     }]
 
     llm_config = {
