@@ -145,7 +145,7 @@ Output ONLY valid JSON:
 
     return final_data
 
-def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, avatar: str = None) -> str:
+def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, storyline: str = "Direct & Formal", avatar: str = None) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
@@ -170,23 +170,27 @@ def run_autogen_blueprint(department: str, style: str, template: str, dimension:
     else:
         dynamic_format = f"Create a {style.lower()} video."
 
-    system_message = f"""You are an expert Prompt Compiler for Google Veo.
-Your only job is to take the user's raw idea and format it into a single, highly effective instructional paragraph for the video AI.
+    system_message = f"""You are an expert Corporate Video Scriptwriter.
+Your job is to generate a comprehensive, highly-structured video script formatted in clean Markdown.
 
 Current Constraints:
 - Department: {department}
 - Visual Style: {dynamic_format}
-{f"- Avatar: Use the provided avatar strictly as a character design reference. CRITICAL: Do NOT use the reference image as the literal first frame of the video, and do NOT showcase the avatar in a full-body diagram at the start." if avatar else ""}
+- Narrative Storyline to Follow: {storyline}
+{f"- Avatar: Use the provided avatar strictly as a character design reference." if avatar else ""}
 
 Task: 
-1. The absolute VERY FIRST sentence of your output MUST be the user's core idea/instruction verbatim or slightly enhanced.
-2. Follow it with the visual style constraints and the department context.
-3. Keep the entire output to a single concise paragraph.
+Generate a scene-by-scene script. Apply the narrative principles of "{storyline}".
+Structure your output using clear Markdown headers for each scene (e.g., `## Scene 1: Hook`, `## Scene 2: ...`).
+For each scene, provide:
+**Visuals:** Describe the camera angle, setting, or avatar position.
+**Narration:** The exact spoken words the avatar will say.
+**On-Screen Text:** Any bullet points, titles, or graphics to appear.
 
 CRITICAL RULES:
-- DO NOT use markdown headers (no ###).
-- DO NOT use bullet points.
-- Return ONLY the final prompt paragraph. No conversational filler like "Here is the prompt".
+- Return ONLY the formatted Markdown text. Do NOT include conversational filler like "Here is the script".
+- The output must be directly readable and editable by the user.
+- Ensure the tone matches the {department} department.
 """
 
     agent = autogen.AssistantAgent(

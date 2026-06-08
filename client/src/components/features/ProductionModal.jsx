@@ -22,6 +22,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
     // Store configuration
     const [config, setConfig] = useState({
         template: null, // This is the Blueprint in UI
+        storyline: 'Direct & Formal',
         dimension: '16:9',
         style: 'Hyper Realistic',
         duration: 4,
@@ -52,6 +53,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             setConfig(prev => ({
                 ...prev,
                 template: selectedDepartment.templates?.[0] || null,
+                storyline: 'Direct & Formal',
                 customPrompt: '',
                 dimension: '16:9',
                 style: 'Hyper Realistic',
@@ -70,6 +72,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
             const result = await generateBlueprint({
                 department: selectedDepartment.name,
                 templateId: config.template?.id,
+                storyline: config.storyline,
                 style: config.style,
                 dimension: config.dimension,
                 additionalPrompt: config.customPrompt || "Standard generation without additional constraints.",
@@ -311,6 +314,62 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
 
                                                 <div className="space-y-4">
                                                     <label className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <FileText size={16} className="text-brand"/> Narrative Storyline
+                                                    </label>
+                                                    <p className="text-[11px] text-slate-500 mb-2">Select the narrative structure for the AI to follow.</p>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {['Direct & Formal', 'Three-Act Structure', 'PAS (Problem-Agitate-Solve)', 'AIDA', 'Scenario / Roleplay'].map(sl => (
+                                                            <button
+                                                                key={sl}
+                                                                onClick={() => setConfig({...config, storyline: sl})}
+                                                                className={cn(
+                                                                    "px-4 py-3 rounded-xl border font-bold text-[11px] transition-all text-left",
+                                                                    config.storyline === sl 
+                                                                        ? "bg-brand/10 border-brand text-brand ring-1 ring-brand/20 shadow-sm"
+                                                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                                )}
+                                                            >
+                                                                {sl}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <label className="text-xs font-bold text-slate-900 uppercase tracking-widest">Choose Character / Engine</label>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {[
+                                                            { id: 'Hyper Realistic', name: 'Hyper Realistic', badge: 'Cinematic', desc: 'A lifelike AI avatar with natural movements, skin texture, and photorealistic rendering.' },
+                                                            { id: 'Infographics', name: 'Infographics', badge: 'Data-driven', desc: 'Bold animated graphics, data visuals, and motion charts to present information clearly.' }
+                                                        ].map((style) => (
+                                                            <div 
+                                                                key={style.id}
+                                                                onClick={() => setConfig({...config, style: style.id})}
+                                                                className={cn(
+                                                                    "p-5 rounded-2xl border cursor-pointer transition-all flex flex-col gap-2 relative overflow-hidden",
+                                                                    config.style === style.id ? "border-brand bg-white shadow-lg shadow-brand/10 ring-1 ring-brand/10" : "border-slate-200 bg-slate-50 hover:bg-white"
+                                                                )}
+                                                            >
+                                                                {config.style === style.id && <div className="absolute top-0 right-0 w-24 h-24 bg-brand/5 rounded-bl-[100px] -mr-4 -mt-4" />}
+                                                                <div className="flex items-center gap-3 relative z-10">
+                                                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", config.style === style.id ? "bg-brand/10 text-brand" : "bg-white text-slate-400 border border-slate-200")}>
+                                                                        {style.id === 'Infographics' ? <Layout size={20} /> : <UserCheck size={20} />}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h4 className="font-bold text-sm text-slate-900">{style.name}</h4>
+                                                                            <span className={cn("text-[9px] font-bold uppercase py-0.5 px-2 rounded-md", config.style === style.id ? "bg-brand/10 text-brand" : "bg-slate-200 text-slate-500")}>{style.badge}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed font-medium relative z-10">{style.desc}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <label className="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
                                                         <FileText size={16} className="text-brand"/> Additional Data / Prompt (Optional)
                                                     </label>
                                                     <p className="text-[11px] text-slate-500 mb-2">Provide specific data, policies, or context to be injected into this template.</p>
@@ -364,38 +423,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                     />
                                                 </div>
 
-                                                <div className="space-y-4">
-                                                    <label className="text-xs font-bold text-slate-900 uppercase tracking-widest">Choose Character / Engine</label>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {[
-                                                            { id: 'Hyper Realistic', name: 'Hyper Realistic', badge: 'Cinematic', desc: 'A lifelike AI avatar with natural movements, skin texture, and photorealistic rendering.' },
-                                                            { id: 'Infographics', name: 'Infographics', badge: 'Data-driven', desc: 'Bold animated graphics, data visuals, and motion charts to present information clearly.' }
-                                                        ].map((style) => (
-                                                            <div 
-                                                                key={style.id}
-                                                                onClick={() => setConfig({...config, style: style.id})}
-                                                                className={cn(
-                                                                    "p-5 rounded-2xl border cursor-pointer transition-all flex flex-col gap-2 relative overflow-hidden",
-                                                                    config.style === style.id ? "border-brand bg-white shadow-lg shadow-brand/10 ring-1 ring-brand/10" : "border-slate-200 bg-slate-50 hover:bg-white"
-                                                                )}
-                                                            >
-                                                                {config.style === style.id && <div className="absolute top-0 right-0 w-24 h-24 bg-brand/5 rounded-bl-[100px] -mr-4 -mt-4" />}
-                                                                <div className="flex items-center gap-3 relative z-10">
-                                                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", config.style === style.id ? "bg-brand/10 text-brand" : "bg-white text-slate-400 border border-slate-200")}>
-                                                                        {style.id === 'Infographics' ? <Layout size={20} /> : <UserCheck size={20} />}
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <h4 className="font-bold text-sm text-slate-900">{style.name}</h4>
-                                                                            <span className={cn("text-[9px] font-bold uppercase py-0.5 px-2 rounded-md", config.style === style.id ? "bg-brand/10 text-brand" : "bg-slate-200 text-slate-500")}>{style.badge}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed font-medium relative z-10">{style.desc}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
+
 
                                                 {/* Credit Transparency Breakdown */}
                                                 <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">

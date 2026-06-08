@@ -22,6 +22,7 @@ class VideoGenerationRequest(BaseModel):
     prompt: str
     style: str
     template: str
+    storyline: str = "Direct & Formal"
     targetDuration: Optional[int] = 15
     avatar: Optional[str] = None
 
@@ -45,6 +46,7 @@ async def generate_script(req: VideoGenerationRequest):
             template=req.template,
             dimension=req.dimension,
             user_prompt=req.prompt,
+            storyline=req.storyline,
             target_duration=req.targetDuration,
             avatar=req.avatar
         )
@@ -67,6 +69,7 @@ def run_blueprint_task(job_id: str, req: VideoGenerationRequest):
             template=req.template,
             dimension=req.dimension,
             user_prompt=req.prompt,
+            storyline=req.storyline,
             avatar=req.avatar
         )
         JOBS[job_id]["status"] = "completed"
