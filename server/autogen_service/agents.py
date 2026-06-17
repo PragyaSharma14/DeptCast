@@ -188,6 +188,7 @@ For each scene, provide:
 **On-Screen Text:** Any bullet points, titles, or graphics to appear.
 
 CRITICAL RULES:
+- ABSOLUTELY DO NOT omit any factual data provided in the concept/prompt. If the user provides specific numbers, policies, or lists, you MUST weave them prominently into the narration and on-screen text.
 - Return ONLY the formatted Markdown text. Do NOT include conversational filler like "Here is the script".
 - The output must be directly readable and editable by the user.
 - Ensure the tone matches the {department} department.
@@ -206,7 +207,7 @@ CRITICAL RULES:
         max_consecutive_auto_reply=0
     )
 
-    initial_message = f"Please compile the final Veo prompt for this concept: {user_prompt}"
+    initial_message = f"Please write the final script for this concept. STRICTLY include all of the following factual data and prioritize it as the core message of the video:\n\n{user_prompt}"
 
     res = user_proxy.initiate_chat(agent, message=initial_message)
     
