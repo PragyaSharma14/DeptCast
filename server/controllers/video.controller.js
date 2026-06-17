@@ -2,8 +2,6 @@ import prisma from '../db.js';
 import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
 import { generateVideoVeoAsync } from '../services/veo.service.js';
-import { renderFinalVideo } from '../services/render.service.js';
-import { generateReferenceImageAsync } from '../services/imagen.service.js';
 
 export const generateVideo = async (req, res) => {
     try {
@@ -109,23 +107,20 @@ export const generateVideo = async (req, res) => {
 
                 const completedScenesWithVideoUrls = await Promise.all(videoPromises);
                 
-                let finalVideoUrl;
-                if (completedScenesWithVideoUrls.length > 1) {
-                    console.log(`[Google Veo] Multiple scenes detected. Stitching videos...`);
-                    finalVideoUrl = await renderFinalVideo(completedScenesWithVideoUrls, projectId);
-                } else {
-                    console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
-                    finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
-                    
-                    // Manually update project since we skipped renderFinalVideo
-                    await prisma.project.update({
-                        where: { id: projectId },
-                        data: { 
-                            status: 'completed',
-                            finalVideoUrl: finalVideoUrl 
-                        }
-                    });
+                if (completedScenesWithVideoUrls.length === 0) {
+                    throw new Error("No scenes generated.");
                 }
+
+                console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
+                const finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
+                
+                await prisma.project.update({
+                    where: { id: projectId },
+                    data: { 
+                        status: 'completed',
+                        finalVideoUrl: finalVideoUrl 
+                    }
+                });
 
                 console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
             } catch (err) {
@@ -211,74 +206,4 @@ export const regenerateScene = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
-
-export const generateReferenceImage = async (req, res) => {
-    try {
-        const { projectId } = req.params;
-        const project = await prisma.project.findFirst({ 
-            where: { 
-                id: projectId,
-                organizationId: req.org.id || req.org._id
-            },
-            include: { scenes: true }
-        });
-        
-        if (!project) return res.status(404).json({ error: "Project not found or unauthorized" });
-        if (!project.scenes || project.scenes.length === 0) return res.status(400).json({ error: "Project has no scenes to generate an image from." });
-
-        const org = await prisma.organization.findUnique({ where: { id: req.org.id || req.org._id } });
-
-        // If the project already has a reference image (e.g., an Avatar was selected), skip AI generation
-        if (project.referenceImageUrl) {
-            console.log(`[Image Draft] Project ${projectId} already has an avatar/reference image. Skipping AI generation.`);
-            return res.status(200).json({ 
-                message: "Using pre-selected avatar", 
-                imageUrl: project.referenceImageUrl,
-                creditsRemaining: org.credits // No credits deducted
-            });
-        }
-
-        const CREDIT_COST = 1;
-        
-        if (org.credits < CREDIT_COST) {
-            return res.status(402).json({ error: `Insufficient credits. Generating a reference image requires ${CREDIT_COST} credits.` });
-        }
-
-        // Use the first scene's prompt as the visual anchor
-        // Use the specialized imagePrompt if available, otherwise fallback to the first scene's prompt
-        const scenePrompt = project.imagePrompt || (project.scenes?.[0]?.prompt) || "A professional corporate visual";
-
-        const dimensionMap = {
-            "16:9": "16:9",
-            "9:16": "9:16",
-            "1:1": "1:1"
-        };
-        const aspectRatio = dimensionMap[project.dimension] || "16:9";
-
-        // Generate Image
-        const imageUrl = await generateReferenceImageAsync(scenePrompt, aspectRatio);
-
-        // Deduct Credits and Update Project
-        const [updatedProject] = await prisma.$transaction([
-            prisma.project.update({
-                where: { id: projectId },
-                data: { referenceImageUrl: imageUrl }
-            }),
-            prisma.organization.update({
-                where: { id: org.id },
-                data: { credits: { decrement: CREDIT_COST } }
-            })
-        ]);
-
-        res.status(200).json({ 
-            message: "Reference image generated successfully", 
-            imageUrl: imageUrl,
-            creditsRemaining: org.credits - CREDIT_COST
-        });
-
-    } catch (error) {
-        console.error("Generate Reference Image Error:", error);
-        res.status(500).json({ error: error.message });
-    }
-};
 

@@ -1,7 +1,4 @@
 import prisma from '../db.js';
-import { analyzeIntent } from '../services/intent.service.js';
-import { getTemplateByDomain } from '../services/template.service.js';
-import { generateScenes } from '../services/scene.service.js';
 
 export const generateBlueprint = async (req, res) => {
     try {
