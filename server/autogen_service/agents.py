@@ -70,7 +70,7 @@ Task:
    - `prompt`: Write the instruction.
      - IF HYPER REALISTIC: Write an overview command directed at the AI model. Example: "[Topic]. Create a cinematic video. Do NOT use reference image as first frame."
      - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout. Example format for `prompt` (MUST be a string containing JSON, escaping quotes if necessary):
-       "{\\"type\\":\\"sequence\\",\\"children\\":[{\\"type\\":\\"scene\\",\\"durationInFrames\\":150,\\"layout\\":{\\"type\\":\\"center\\",\\"backgroundColor\\":\\"#111111\\",\\"children\\":[{\\"type\\":\\"text\\",\\"text\\":\\"[Insert Topic Title]\\",\\"color\\":\\"#ffffff\\",\\"fontSize\\":\\"80px\\"}]}}]}"
+       "{{'type':'sequence','children':[{{'type':'scene','durationInFrames':150,'layout':{{'type':'center','backgroundColor':'#111111','children':[{{'type':'text','text':'[Insert Topic Title]','color':'#ffffff','fontSize':'80px'}}]}}}}]}}"
 
 Output ONLY valid JSON:
 {{
