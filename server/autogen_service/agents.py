@@ -42,7 +42,7 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
         dynamic_format = "Create a hyper-realistic, cinematic video featuring highly detailed environments, realistic lighting, and lifelike human subjects."
     elif style.lower() in ["infographic", "info-graphic"]:
         style_guide = "Use infographic and motion graphic terms: clean 2D vector illustrations, bold flat colors, kinetic typography, smooth isometric transitions, NO photorealism."
-        dynamic_format = "Create a clean 2D vector infographic video. Use bold, flat colors, motion graphics, animated icons, and kinetic typography. ABSOLUTELY NO photorealism."
+        dynamic_format = "Create a JSON AST defining a Generative UI for Remotion. The output must strictly be a stringified JSON object describing layout, text, and charts. ABSOLUTELY NO narrative descriptions."
     else:
         style_guide = "Use visuals matching the requested style."
         dynamic_format = f"Create a {style.lower()} video."
@@ -67,9 +67,10 @@ Task:
 1. **Storyline**: Summarize the core concept.
 2. **Image Prompt**: Write a prompt for the reference image.
 3. **Scenes**: You must output exactly {num_scenes} scene. 
-   - `prompt`: Write an overview command directed at the AI model. Do NOT describe a scene or visual actions. Instead, give it instructions on what to create. 
-   
-   Example format: "[Insert the user's core topic and specific details HERE as the absolute highest priority]. {dynamic_format} This is for the {department} department in {dimension} dimension. Use the provided avatar image strictly as a character design reference for the presenter. CRITICAL: Do NOT use the reference image as the literal first frame of the video, and do NOT showcase the avatar in a full-body diagram at the start. Keep the tone [insert tone from department guide]."
+   - `prompt`: Write the instruction.
+     - IF HYPER REALISTIC: Write an overview command directed at the AI model. Example: "[Topic]. Create a cinematic video. Do NOT use reference image as first frame."
+     - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout. Example format for `prompt` (MUST be a string containing JSON, escaping quotes if necessary):
+       "{\\"type\\":\\"sequence\\",\\"children\\":[{\\"type\\":\\"scene\\",\\"durationInFrames\\":150,\\"layout\\":{\\"type\\":\\"center\\",\\"backgroundColor\\":\\"#111111\\",\\"children\\":[{\\"type\\":\\"text\\",\\"text\\":\\"[Insert Topic Title]\\",\\"color\\":\\"#ffffff\\",\\"fontSize\\":\\"80px\\"}]}}]}"
 
 Output ONLY valid JSON:
 {{
@@ -93,8 +94,8 @@ Output ONLY valid JSON:
     system_message_critic = f"""You are the Quality Critic. Review the Prompt Engineer's JSON output.
 - Ensure 'storyline', 'image_prompt', and 'scenes' are all present.
 - Ensure exactly {num_scenes} scene is provided.
-- Ensure the prompt is written as an overview instruction directed at the AI (e.g., "Create a video regarding..."), NOT as a visual scene description (e.g., "A vector avatar stands on the left...").
-- You MUST reject any prompt that describes visual sequencing or camera movements. It must simply state what the video is about, the style, the department, and the details to include.
+- Ensure the prompt is formatted correctly for the requested style (Hyper Realistic requires a text command, Infographics REQUIRES a stringified JSON AST in the `prompt` field).
+- You MUST reject any prompt that fails to provide a JSON AST string when the style is Infographics.
 - If perfect, reply ONLY with the exact verbatim JSON. Otherwise, point out errors."""
 
     critic = autogen.AssistantAgent(

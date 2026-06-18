@@ -2,7 +2,7 @@ import prisma from '../db.js';
 import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
 import { generateVideoVeoAsync } from '../services/veo.service.js';
-
+import { generateRemotionVideo } from '../services/remotion.service.js';
 export const generateVideo = async (req, res) => {
     try {
         const { projectId } = req.params;
@@ -74,55 +74,91 @@ export const generateVideo = async (req, res) => {
                     data: { status: 'generating' }
                 });
 
-                console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes (${perSceneDuration}s each)...`);
-
-                // 2. Call Veo in parallel for each scene
-                const videoPromises = scenes.map(async (scene) => {
+                if (project.style === 'Infographics') {
+                    console.log(`[Remotion] Starting Remotion generation for project ${projectId}...`);
+                    // We only need one combined JSON AST for the whole video
+                    // For now, we take the prompt from the first scene (which should be the AST)
+                    const jsonAstString = scenes[0].prompt;
+                    let jsonAst;
                     try {
-                        console.log("\n=======================================================");
-                        console.log(`🎬 [VEO PROMPT] Scene ${scene.sceneNumber} 🎬`);
-                        console.log(`Final Prompt text that WOULD be sent to Veo:`);
-                        console.log(`${scene.prompt}`);
-                        console.log("=======================================================\n");
-                        
-                        const videoUrl = await generateVideoVeoAsync(scene.prompt, perSceneDuration, videoRes, project.referenceImageUrl);
-                        
-                        // Update individual scene status
-                        await prisma.scene.update({
-                            where: { id: scene.id },
-                            data: { status: 'completed' } // We could store a videoUrl on the scene model if it existed, for now just status
-                        });
-                        
-                        // Pass along the URL so we can stitch it later.
-                        // We will add the url dynamically to the scene object
-                        return { ...scene, videoUrl };
-                    } catch (error) {
-                        await prisma.scene.update({
-                            where: { id: scene.id },
-                            data: { status: 'failed' }
-                        });
-                        throw error; // Fail the entire project if one scene fails
+                        jsonAst = JSON.parse(jsonAstString);
+                    } catch (e) {
+                        console.warn("[Remotion] Failed to parse AST, using fallback dummy AST");
+                        jsonAst = {
+                            type: "sequence",
+                            children: [{
+                                type: "scene", durationInFrames: 150, layout: {
+                                    type: "center", children: [{ type: "text", text: scenes[0].prompt || "Infographic generated" }]
+                                }
+                            }]
+                        };
                     }
-                });
+                    
+                    const finalVideoUrl = await generateRemotionVideo(jsonAst, projectId);
+                    
+                    await prisma.scene.updateMany({
+                        where: { projectId },
+                        data: { status: 'completed' }
+                    });
 
-                const completedScenesWithVideoUrls = await Promise.all(videoPromises);
-                
-                if (completedScenesWithVideoUrls.length === 0) {
-                    throw new Error("No scenes generated.");
+                    await prisma.project.update({
+                        where: { id: projectId },
+                        data: { status: 'completed', finalVideoUrl }
+                    });
+                    
+                    console.log(`Project ${projectId} completely finished using Remotion! URL: ${finalVideoUrl}`);
+
+                } else {
+                    console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes (${perSceneDuration}s each)...`);
+
+                    // 2. Call Veo in parallel for each scene
+                    const videoPromises = scenes.map(async (scene) => {
+                        try {
+                            console.log("\n=======================================================");
+                            console.log(`🎬 [VEO PROMPT] Scene ${scene.sceneNumber} 🎬`);
+                            console.log(`Final Prompt text that WOULD be sent to Veo:`);
+                            console.log(`${scene.prompt}`);
+                            console.log("=======================================================\n");
+                            
+                            const videoUrl = await generateVideoVeoAsync(scene.prompt, perSceneDuration, videoRes, project.referenceImageUrl);
+                            
+                            // Update individual scene status
+                            await prisma.scene.update({
+                                where: { id: scene.id },
+                                data: { status: 'completed' } // We could store a videoUrl on the scene model if it existed, for now just status
+                            });
+                            
+                            // Pass along the URL so we can stitch it later.
+                            // We will add the url dynamically to the scene object
+                            return { ...scene, videoUrl };
+                        } catch (error) {
+                            await prisma.scene.update({
+                                where: { id: scene.id },
+                                data: { status: 'failed' }
+                            });
+                            throw error; // Fail the entire project if one scene fails
+                        }
+                    });
+
+                    const completedScenesWithVideoUrls = await Promise.all(videoPromises);
+                    
+                    if (completedScenesWithVideoUrls.length === 0) {
+                        throw new Error("No scenes generated.");
+                    }
+
+                    console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
+                    const finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
+                    
+                    await prisma.project.update({
+                        where: { id: projectId },
+                        data: { 
+                            status: 'completed',
+                            finalVideoUrl: finalVideoUrl 
+                        }
+                    });
+
+                    console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
                 }
-
-                console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
-                const finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
-                
-                await prisma.project.update({
-                    where: { id: projectId },
-                    data: { 
-                        status: 'completed',
-                        finalVideoUrl: finalVideoUrl 
-                    }
-                });
-
-                console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
             } catch (err) {
                 console.error("Background Video Generation Failed for project", projectId, err);
                 
