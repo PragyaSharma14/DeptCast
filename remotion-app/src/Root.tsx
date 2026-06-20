@@ -39,6 +39,18 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="DynamicVideo"
         component={DynamicComposition}
+        calculateMetadata={({ props }) => {
+          let totalDuration = 0;
+          if (props.ast && props.ast.children) {
+            for (const child of props.ast.children) {
+              totalDuration += (child.durationInFrames || 90);
+            }
+          }
+          return {
+            durationInFrames: totalDuration > 0 ? totalDuration : 300,
+            props
+          };
+        }}
         durationInFrames={300}
         fps={30}
         width={1920}

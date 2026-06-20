@@ -9,10 +9,10 @@
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "remotion": "4.0.222"
+    "remotion": "4.0.479"
   },
   "devDependencies": {
-    "@remotion/cli": "4.0.222",
+    "@remotion/cli": "4.0.479",
     "@types/react": "^18.0.26",
     "typescript": "^5.3.3"
   }

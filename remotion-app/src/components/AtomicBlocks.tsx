@@ -1,5 +1,9 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { KineticTitle } from "./KineticTitle";
+import { BentoBoxGrid } from "./BentoBoxGrid";
+import { AnimatedBarChart } from "./AnimatedBarChart";
+import { LowerThird } from "./LowerThird";
 
 const AnimatedText: React.FC<{ node: any }> = ({ node }) => {
   const frame = useCurrentFrame();
@@ -65,6 +69,7 @@ const SimpleChart: React.FC<{ data: number[] }> = ({ data }) => {
 export const AtomicBlocks: React.FC<{ layout: any }> = ({ layout }) => {
   if (!layout) return null;
 
+  // Legacy layout handlers
   if (layout.type === "center") {
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
@@ -94,6 +99,27 @@ export const AtomicBlocks: React.FC<{ layout: any }> = ({ layout }) => {
   
   if (layout.type === "chart") {
     return <SimpleChart data={layout.data || []} />;
+  }
+
+  // Premium Component handlers
+  if (layout.type === "kinetic_title") {
+    return <KineticTitle text={layout.text} palette={layout.palette} />;
+  }
+
+  if (layout.type === "bento") {
+    return <BentoBoxGrid data={layout.data} palette={layout.palette} />;
+  }
+
+  if (layout.type === "bar_chart") {
+    return <AnimatedBarChart title={layout.title} data={layout.data} labels={layout.labels} palette={layout.palette} />;
+  }
+
+  if (layout.type === "lower_third") {
+    return (
+      <AbsoluteFill>
+        <LowerThird title={layout.title} subtitle={layout.subtitle} palette={layout.palette} />
+      </AbsoluteFill>
+    );
   }
 
   return null;

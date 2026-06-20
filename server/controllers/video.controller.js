@@ -76,22 +76,47 @@ export const generateVideo = async (req, res) => {
 
                 if (project.style === 'Infographics') {
                     console.log(`[Remotion] Starting Remotion generation for project ${projectId}...`);
-                    // We only need one combined JSON AST for the whole video
-                    // For now, we take the prompt from the first scene (which should be the AST)
-                    const jsonAstString = scenes[0].prompt;
+                    
                     let jsonAst;
                     try {
-                        jsonAst = JSON.parse(jsonAstString);
+                        // Check if the prompt is already a valid AST
+                        jsonAst = (new Function(`return ${scenes[0].prompt};`))();
+                        if (!jsonAst || jsonAst.type !== 'sequence') throw new Error("Not a sequence AST");
                     } catch (e) {
-                        console.warn("[Remotion] Failed to parse AST, using fallback dummy AST");
-                        jsonAst = {
-                            type: "sequence",
-                            children: [{
-                                type: "scene", durationInFrames: 150, layout: {
-                                    type: "center", children: [{ type: "text", text: scenes[0].prompt || "Infographic generated" }]
-                                }
-                            }]
-                        };
+                        console.log("[Remotion] Prompt is a Markdown blueprint. Calling AutoGen to generate AST...");
+                        const autogenUrl = (process.env.AUTOGEN_URL || 'http://localhost:8000').replace(/\/$/, '');
+                        const response = await fetch(`${autogenUrl}/generate-script`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+                            },
+                            body: JSON.stringify({
+                                prompt: scenes.map(s => s.prompt).join('\n'),
+                                department: project.domain || 'General',
+                                style: project.style || 'Infographics',
+                                template: template ? template.title : "Standard generation",
+                                dimension: project.dimension || '16:9',
+                                targetDuration: project.targetDuration || 15
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`AutoGen AST generation failed: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        if (result.scenes && result.scenes.length > 0) {
+                            const astString = result.scenes[0].prompt;
+                            try {
+                                jsonAst = (new Function(`return ${astString};`))();
+                            } catch (err) {
+                                console.error("[Remotion] AI failed to output valid JSON AST string:", astString);
+                                throw new Error("AI generated invalid AST format.");
+                            }
+                        } else {
+                            throw new Error("AutoGen returned empty scenes array.");
+                        }
                     }
                     
                     const finalVideoUrl = await generateRemotionVideo(jsonAst, projectId);

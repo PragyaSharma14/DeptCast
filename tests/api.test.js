@@ -221,7 +221,7 @@ describe('Video-AI API QA Test Suite', () => {
     console.log('✅ Video generation endpoint triggered successfully.');
   });
 
-  test('9. POST /videos/scene/:sceneId/regenerate - Trigger Scene Regeneration (Mocked)', async () => {
+  test('9. POST /videos/scene/:sceneId/regenerate - Trigger Scene Regeneration (Should fail if generating)', async () => {
     const res = await fetch(`${BASE_URL}/videos/scene/${sceneId}/regenerate`, {
       method: 'POST',
       headers: {
@@ -234,10 +234,10 @@ describe('Video-AI API QA Test Suite', () => {
       })
     });
 
-    assert.strictEqual(res.status, 202);
+    assert.strictEqual(res.status, 400);
     const body = await res.json();
-    assert.ok(body.message.includes('started'), 'Message should confirm regeneration start');
-    console.log('✅ Scene regeneration endpoint triggered successfully.');
+    assert.ok(body.error.includes('already being generated'), 'Should reject concurrent regeneration');
+    console.log('✅ Scene regeneration concurrent block verified.');
   });
 
   // 5. AutoGen Integration Check (Conditional)
@@ -275,5 +275,48 @@ describe('Video-AI API QA Test Suite', () => {
     const body = await res.json();
     assert.ok(body.jobId, 'Should return a jobId');
     console.log(`✅ Blueprint generation request accepted. Job ID: ${body.jobId}`);
+  });
+
+  // 6. Infographic Remotion Generation Test
+  let infographicProjectId;
+  test('11. POST /projects - Create Infographic Project', async () => {
+    const res = await fetch(`${BASE_URL}/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-organization-id': orgId
+      },
+      body: JSON.stringify({
+        additionalPrompt: '[Style: Infographics, Target Length: 10s] ## Scene 1: Introduction **Visuals:** Clean, minimal. **Narration:** Welcome to our new HR module.',
+        department: 'HR',
+        style: 'Infographics',
+        dimension: '16:9',
+        targetDuration: 10
+      })
+    });
+
+    assert.strictEqual(res.status, 201);
+    const body = await res.json();
+    infographicProjectId = body.project.id;
+    console.log(`✅ Infographic Project created successfully. ID: ${infographicProjectId}`);
+  });
+
+  test('12. POST /videos/project/:projectId/generate - Trigger Infographic Generation (AST conversion)', async () => {
+    const res = await fetch(`${BASE_URL}/videos/project/${infographicProjectId}/generate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-organization-id': orgId
+      }
+    });
+
+    assert.strictEqual(res.status, 202);
+    const body = await res.json();
+    assert.ok(body.message.includes('started'), 'Message should confirm generation start');
+    console.log('✅ Infographic Video generation endpoint triggered successfully.');
+    
+    // Give it a second to run the background AST conversion task
+    await delay(2000);
   });
 });

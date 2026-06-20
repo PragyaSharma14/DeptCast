@@ -69,8 +69,11 @@ Task:
 3. **Scenes**: You must output exactly {num_scenes} scene. 
    - `prompt`: Write the instruction.
      - IF HYPER REALISTIC: Write an overview command directed at the AI model. Example: "[Topic]. Create a cinematic video. Do NOT use reference image as first frame."
-     - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout. Example format for `prompt` (MUST be a string containing JSON, escaping quotes if necessary):
-       "{{'type':'sequence','children':[{{'type':'scene','durationInFrames':150,'layout':{{'type':'center','backgroundColor':'#111111','children':[{{'type':'text','text':'[Insert Topic Title]','color':'#ffffff','fontSize':'80px'}}]}}}}]}}"
+     - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout. 
+       You MUST compose the layout EXCLUSIVELY using these premium component types: 'kinetic_title', 'bento', 'bar_chart', 'lower_third'.
+       You MUST assign the correct palette based on the department (e.g., 'HR_Palette', 'Marketing_Palette', 'IT_Palette', or 'Default').
+       Example format for `prompt` (MUST be a string containing JSON):
+       "{{'type':'sequence','children':[{{'type':'scene','durationInFrames':150,'layout':{{'type':'bento','palette':'HR_Palette','data':['Data 1', 'Data 2', 'Data 3']}}}}]}}"
 
 Output ONLY valid JSON:
 {{
