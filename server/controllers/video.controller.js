@@ -95,7 +95,7 @@ export const generateVideo = async (req, res) => {
                                 prompt: scenes.map(s => s.prompt).join('\n'),
                                 department: project.domain || 'General',
                                 style: project.style || 'Infographics',
-                                template: template ? template.title : "Standard generation",
+                                template: (template && template.title) ? template.title : "Standard generation",
                                 dimension: project.dimension || '16:9',
                                 targetDuration: project.targetDuration || 15
                             })
