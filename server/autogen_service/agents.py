@@ -52,6 +52,20 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
     
     avatar_hint = f"\n- Selected Avatar: A {avatar} presenter." if avatar else ""
 
+<<<<<<< HEAD
+=======
+Task:
+1. Identify the 'Must-Have' information from the user's prompt (dates, names, specific rules).
+2. Write a short, punchy script (1-2 paragraphs) that conveys this information effectively.
+3. This script will serve as the narrative foundation for the visual director.
+4. Focus on clarity and professional tone.
+5. **SCRIPT LENGTH CALIBRATION**: Your script MUST be tailored to the target duration of {target_duration} seconds.
+   - For 4s: ~10-15 words.
+   - For 8s: ~25-30 words.
+   - For 16s: ~50-60 words.
+6. **CRITICAL STYLE RULE**: Your narrative MUST support a {style.upper()} aesthetic ({style_guide}). Describe visual metaphors that fit this specific style only.
+"""
+>>>>>>> 4ac3570bf07fa9cf418c0d1f45eeaf44a138a618
 
 
     system_message_director = f"""You are a Prompt Engineer for Google Veo.
@@ -64,6 +78,7 @@ Current Constraints:
 - Video Dimension: {dimension}{avatar_hint}
 
 Task:
+<<<<<<< HEAD
 1. **Storyline**: Summarize the core concept.
 2. **Image Prompt**: Write a prompt for the reference image.
 3. **Scenes**: You must output exactly {num_scenes} scene. 
@@ -74,6 +89,20 @@ Task:
        You MUST assign the correct palette based on the department (e.g., 'HR_Palette', 'Marketing_Palette', 'IT_Palette', or 'Default').
        Example format for `prompt` (MUST be a string containing JSON):
        "{{'type':'sequence','children':[{{'type':'scene','durationInFrames':150,'layout':{{'type':'bento','palette':'HR_Palette','data':['Data 1', 'Data 2', 'Data 3']}}}}]}}"
+=======
+1. **Storyline**: Summarize the script into a final polished storyline for the video.
+2. **Image Prompt**: Write one spectacular, dense visual prompt for a reference image (Imagen). 
+   - **SUBJECT FOCUS**: For {department.upper()} in {style.upper()} style, you MUST include a high-fidelity, professional person/subject in a modern environment.
+   - **AESTHETIC**: Capture the central theme and aesthetic of the entire video in a single high-fidelity shot.
+3. **Scenes**: Create exactly {num_scenes} scenes (each {scene_duration}s). Each scene needs:
+   - `sceneNumber`: int
+   - `description`: User-facing story snippet.
+   - `prompt`: **DIRECTING, NOT DESCRIBING**. Since the reference image handles the subject and setting:
+     - DO NOT describe the background, furniture, or clothes again.
+     - DO focus on **Action and Motion** (e.g., 'The person turns and gestures toward the screen,' 'A slow cinematic zoom-in on the hands typing').
+     - DO focus on **Camera Movement** (e.g., 'A smooth drone-style push-in').
+     - Include lighting changes if applicable.
+>>>>>>> 4ac3570bf07fa9cf418c0d1f45eeaf44a138a618
 
 Output ONLY valid JSON:
 {{
@@ -96,9 +125,11 @@ Output ONLY valid JSON:
 
     system_message_critic = f"""You are the Quality Critic. Review the Prompt Engineer's JSON output.
 - Ensure 'storyline', 'image_prompt', and 'scenes' are all present.
-- Ensure exactly {num_scenes} scene is provided.
+- Ensure exactly {num_scenes} scenes are provided.
 - Ensure the prompt is formatted correctly for the requested style (Hyper Realistic requires a text command, Infographics REQUIRES a stringified JSON AST in the `prompt` field).
 - You MUST reject any prompt that fails to provide a JSON AST string when the style is Infographics.
+- Ensure the prompts are focused on **Motion and Action** and do NOT repeat background descriptions from the image_prompt.
+- Ensure the script length matches the target duration.
 - If perfect, reply ONLY with the exact verbatim JSON. Otherwise, point out errors."""
 
     critic = autogen.AssistantAgent(
