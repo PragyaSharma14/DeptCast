@@ -72,6 +72,10 @@ export const generateVideoVeoAsync = async (prompt, targetDuration = 5, resoluti
             }
         }
 
+        // Google Veo strictly requires 4 or 8 seconds.
+        // We over-generate and then trim using ffmpeg later.
+        const apiDuration = targetDuration <= 4 ? 4 : 8;
+
         // POST to Gemini API
         const response = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predictLongRunning?key=${API_KEY}`,
@@ -79,7 +83,7 @@ export const generateVideoVeoAsync = async (prompt, targetDuration = 5, resoluti
                 instances: [instanceData],
                 parameters: {
                     aspectRatio: aspectRatio,
-                    // durationSeconds: targetDuration
+                    durationSeconds: apiDuration
                 }
             },
             {

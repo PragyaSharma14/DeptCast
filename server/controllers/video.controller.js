@@ -3,6 +3,10 @@ import { getTemplateByDomain } from '../services/template.service.js';
 import { buildCinematicPrompt } from '../services/prompt.service.js';
 import { generateVideoVeoAsync } from '../services/veo.service.js';
 import { generateRemotionVideo } from '../services/remotion.service.js';
+import { generateImageAsync } from '../services/imagen.service.js';
+import { generateAudioAsync } from '../services/audio.service.js';
+import { stitchScenesAsync } from '../services/stitching.service.js';
+
 export const generateVideo = async (req, res) => {
     try {
         const { projectId } = req.params;
@@ -74,51 +78,62 @@ export const generateVideo = async (req, res) => {
                     data: { status: 'generating' }
                 });
 
+                // Always parse/generate scenes via AutoGen regardless of style
+                let jsonScenes = null;
+                console.log(`[AutoGen] Generating scene breakdown for project ${projectId}...`);
+                
+                try {
+                    // Try to see if it's already a JSON
+                    const parsed = JSON.parse(scenes[0].prompt);
+                    if (parsed.scenes && Array.isArray(parsed.scenes)) {
+                        jsonScenes = parsed.scenes;
+                    } else if (parsed.type === 'sequence') {
+                        // Legacy Infographic format
+                        jsonScenes = [parsed];
+                    } else {
+                        throw new Error("Invalid structure");
+                    }
+                } catch (e) {
+                    console.log("[AutoGen] Calling AutoGen to break down script...");
+                    const autogenUrl = (process.env.AUTOGEN_URL || 'http://localhost:8000').replace(/\/$/, '');
+                    const response = await fetch(`${autogenUrl}/generate-script`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Secret': process.env.AUTOGEN_SECRET || ''
+                        },
+                        body: JSON.stringify({
+                            prompt: scenes.map(s => s.prompt).join('\n'),
+                            department: project.domain || 'General',
+                            style: project.style || 'Hyper Realistic',
+                            template: (template && template.title) ? template.title : "Standard generation",
+                            dimension: project.dimension || '16:9',
+                            targetDuration: project.targetDuration || 16,
+                            avatar: project.avatar || null
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error(`AutoGen failed: ${response.status}`);
+                    
+                    const result = await response.json();
+                    if (result.scenes && Array.isArray(result.scenes)) {
+                        jsonScenes = result.scenes;
+                    } else {
+                        throw new Error("AutoGen returned invalid data.");
+                    }
+                }
+
                 if (project.style === 'Infographics') {
                     console.log(`[Remotion] Starting Remotion generation for project ${projectId}...`);
                     
+                    // The AST is embedded in the first scene's `prompt` for Infographics
                     let jsonAst;
                     try {
-                        // Check if the prompt is already a valid AST
-                        jsonAst = (new Function(`return ${scenes[0].prompt};`))();
-                        if (!jsonAst || jsonAst.type !== 'sequence') throw new Error("Not a sequence AST");
-                    } catch (e) {
-                        console.log("[Remotion] Prompt is a Markdown blueprint. Calling AutoGen to generate AST...");
-                        const autogenUrl = (process.env.AUTOGEN_URL || 'http://localhost:8000').replace(/\/$/, '');
-                        const response = await fetch(`${autogenUrl}/generate-script`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-API-Secret': process.env.AUTOGEN_SECRET || ''
-                            },
-                            body: JSON.stringify({
-                                prompt: scenes.map(s => s.prompt).join('\n'),
-                                department: project.domain || 'General',
-                                style: project.style || 'Infographics',
-                                template: (template && template.title) ? template.title : "Standard generation",
-                                dimension: project.dimension || '16:9',
-                                targetDuration: project.targetDuration || 15
-                            })
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`AutoGen AST generation failed: ${response.status}`);
-                        }
-                        
-                        const result = await response.json();
-                        if (result.scenes && result.scenes.length > 0) {
-                            const astString = result.scenes[0].prompt;
-                            try {
-                                jsonAst = (new Function(`return ${astString};`))();
-                            } catch (err) {
-                                console.error("[Remotion] AI failed to output valid JSON AST string:", astString);
-                                throw new Error("AI generated invalid AST format.");
-                            }
-                        } else {
-                            throw new Error("AutoGen returned empty scenes array.");
-                        }
+                        jsonAst = (new Function(`return ${jsonScenes[0].prompt};`))();
+                    } catch(err) {
+                        throw new Error("AI generated invalid AST format for Remotion.");
                     }
-                    
+
                     const finalVideoUrl = await generateRemotionVideo(jsonAst, projectId);
                     
                     await prisma.scene.updateMany({
@@ -131,48 +146,60 @@ export const generateVideo = async (req, res) => {
                         data: { status: 'completed', finalVideoUrl }
                     });
                     
-                    console.log(`Project ${projectId} completely finished using Remotion! URL: ${finalVideoUrl}`);
+                    console.log(`Project ${projectId} finished using Remotion! URL: ${finalVideoUrl}`);
 
                 } else {
-                    console.log(`[Google Veo] Starting parallel generation for ${scenes.length} scenes (${perSceneDuration}s each)...`);
+                    console.log(`[Google Veo] Starting progressive generation for ${jsonScenes.length} scenes...`);
 
-                    // 2. Call Veo in parallel for each scene
-                    const videoPromises = scenes.map(async (scene) => {
+                    const stitchedClips = [];
+
+                    for (let i = 0; i < jsonScenes.length; i++) {
+                        const sceneData = jsonScenes[i];
+                        const duration = sceneData.duration_seconds || 8;
+                        console.log(`\n--- Processing Scene ${i + 1} (${duration}s) ---`);
+                        
                         try {
-                            console.log("\n=======================================================");
-                            console.log(`🎬 [VEO PROMPT] Scene ${scene.sceneNumber} 🎬`);
-                            console.log(`Final Prompt text that WOULD be sent to Veo:`);
-                            console.log(`${scene.prompt}`);
-                            console.log("=======================================================\n");
-                            
-                            const videoUrl = await generateVideoVeoAsync(scene.prompt, perSceneDuration, videoRes, project.referenceImageUrl);
-                            
-                            // Update individual scene status
-                            await prisma.scene.update({
-                                where: { id: scene.id },
-                                data: { status: 'completed' } // We could store a videoUrl on the scene model if it existed, for now just status
-                            });
-                            
-                            // Pass along the URL so we can stitch it later.
-                            // We will add the url dynamically to the scene object
-                            return { ...scene, videoUrl };
-                        } catch (error) {
-                            await prisma.scene.update({
-                                where: { id: scene.id },
-                                data: { status: 'failed' }
-                            });
-                            throw error; // Fail the entire project if one scene fails
-                        }
-                    });
+                            // 1. Generate Image (Imagen)
+                            let imageUrl = project.referenceImageUrl; // fallback to base if no scene prompt
+                            if (sceneData.image_prompt) {
+                                console.log(`[Imagen] Generating reference image for scene ${i + 1}...`);
+                                imageUrl = await generateImageAsync(sceneData.image_prompt, project.dimension || "16:9", project.avatar);
+                            }
 
-                    const completedScenesWithVideoUrls = await Promise.all(videoPromises);
-                    
-                    if (completedScenesWithVideoUrls.length === 0) {
-                        throw new Error("No scenes generated.");
+                            // 2. Generate Video (Veo)
+                            console.log(`[Veo] Generating video for scene ${i + 1}...`);
+                            const videoUrl = await generateVideoVeoAsync(sceneData.prompt, duration, videoRes, imageUrl);
+
+                            // 3. Generate Audio (TTS)
+                            let audioUrl = null;
+                            if (sceneData.narration && sceneData.narration.trim() !== '') {
+                                console.log(`[Audio] Generating TTS for scene ${i + 1}...`);
+                                audioUrl = await generateAudioAsync(sceneData.narration);
+                            }
+
+                            stitchedClips.push({
+                                videoPath: videoUrl,
+                                audioPath: audioUrl,
+                                duration: duration
+                            });
+                            
+                            // Try to update DB to reflect progress
+                            if (scenes[i]) {
+                                await prisma.scene.update({
+                                    where: { id: scenes[i].id },
+                                    data: { status: 'completed', description: sceneData.description || 'Done' }
+                                });
+                            }
+
+                        } catch (error) {
+                            console.error(`Failed on Scene ${i + 1}:`, error);
+                            throw error; 
+                        }
                     }
 
-                    console.log(`[Google Veo] Single scene detected. Skipping stitching.`);
-                    const finalVideoUrl = completedScenesWithVideoUrls[0].videoUrl;
+                    // 4. Stitch it all together
+                    console.log(`[Stitching] Commencing final stitch...`);
+                    const finalVideoUrl = await stitchScenesAsync(stitchedClips);
                     
                     await prisma.project.update({
                         where: { id: projectId },
@@ -182,7 +209,7 @@ export const generateVideo = async (req, res) => {
                         }
                     });
 
-                    console.log(`Project ${projectId} completely finished using Google Veo! URL: ${finalVideoUrl}`);
+                    console.log(`Project ${projectId} completely finished using Google Veo Pipeline! URL: ${finalVideoUrl}`);
                 }
             } catch (err) {
                 console.error("Background Video Generation Failed for project", projectId, err);

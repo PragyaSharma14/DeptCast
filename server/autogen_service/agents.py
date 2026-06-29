@@ -52,20 +52,7 @@ def run_autogen_workflow(department: str, style: str, template: str, dimension: 
     
     avatar_hint = f"\n- Selected Avatar: A {avatar} presenter." if avatar else ""
 
-<<<<<<< HEAD
-=======
-Task:
-1. Identify the 'Must-Have' information from the user's prompt (dates, names, specific rules).
-2. Write a short, punchy script (1-2 paragraphs) that conveys this information effectively.
-3. This script will serve as the narrative foundation for the visual director.
-4. Focus on clarity and professional tone.
-5. **SCRIPT LENGTH CALIBRATION**: Your script MUST be tailored to the target duration of {target_duration} seconds.
-   - For 4s: ~10-15 words.
-   - For 8s: ~25-30 words.
-   - For 16s: ~50-60 words.
-6. **CRITICAL STYLE RULE**: Your narrative MUST support a {style.upper()} aesthetic ({style_guide}). Describe visual metaphors that fit this specific style only.
-"""
->>>>>>> 4ac3570bf07fa9cf418c0d1f45eeaf44a138a618
+    # Updated Prompt length calibration rules integrated directly into the CreativeDirector below.
 
 
     system_message_director = f"""You are a Prompt Engineer for Google Veo.
@@ -78,38 +65,25 @@ Current Constraints:
 - Video Dimension: {dimension}{avatar_hint}
 
 Task:
-<<<<<<< HEAD
-1. **Storyline**: Summarize the core concept.
-2. **Image Prompt**: Write a prompt for the reference image.
-3. **Scenes**: You must output exactly {num_scenes} scene. 
-   - `prompt`: Write the instruction.
-     - IF HYPER REALISTIC: Write an overview command directed at the AI model. Example: "[Topic]. Create a cinematic video. Do NOT use reference image as first frame."
-     - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout. 
-       You MUST compose the layout EXCLUSIVELY using these premium component types: 'kinetic_title', 'bento', 'bar_chart', 'lower_third'.
-       You MUST assign the correct palette based on the department (e.g., 'HR_Palette', 'Marketing_Palette', 'IT_Palette', or 'Default').
-       Example format for `prompt` (MUST be a string containing JSON):
-       "{{'type':'sequence','children':[{{'type':'scene','durationInFrames':150,'layout':{{'type':'bento','palette':'HR_Palette','data':['Data 1', 'Data 2', 'Data 3']}}}}]}}"
-=======
 1. **Storyline**: Summarize the script into a final polished storyline for the video.
-2. **Image Prompt**: Write one spectacular, dense visual prompt for a reference image (Imagen). 
-   - **SUBJECT FOCUS**: For {department.upper()} in {style.upper()} style, you MUST include a high-fidelity, professional person/subject in a modern environment.
-   - **AESTHETIC**: Capture the central theme and aesthetic of the entire video in a single high-fidelity shot.
-3. **Scenes**: Create exactly {num_scenes} scenes (each {scene_duration}s). Each scene needs:
+2. **Master Character & Style DNA**: Define an extremely detailed, persistent visual description of the main subject(s), lighting, lens, and environment. You MUST prepend this exact DNA string to EVERY `image_prompt` you generate to ensure 100% character consistency across scenes.
+3. **Scenes**: Break the script down into {num_scenes} sequential scenes. The sum of `duration_seconds` for all scenes MUST equal exactly {target_duration}.
+   For each scene, output:
    - `sceneNumber`: int
+   - `duration_seconds`: int (Use whatever integer makes sense for the narration length, e.g., 3, 5, 7. Sum must equal {target_duration}).
+   - `narration`: The exact spoken text for this scene.
    - `description`: User-facing story snippet.
-   - `prompt`: **DIRECTING, NOT DESCRIBING**. Since the reference image handles the subject and setting:
-     - DO NOT describe the background, furniture, or clothes again.
-     - DO focus on **Action and Motion** (e.g., 'The person turns and gestures toward the screen,' 'A slow cinematic zoom-in on the hands typing').
-     - DO focus on **Camera Movement** (e.g., 'A smooth drone-style push-in').
-     - Include lighting changes if applicable.
->>>>>>> 4ac3570bf07fa9cf418c0d1f45eeaf44a138a618
+   - `image_prompt`: A highly creative visual description of the static scene to feed to the image generator. MUST start with your Master DNA string. Get creative! Use cinematic B-Roll concepts (abstract representations, dynamic environments, close-up product shots, text integrations) instead of just "a person standing". If an Avatar is specified, ensure they match the Avatar.
+   - `prompt`: The Video Generation (Veo) Prompt. **DIRECTING, NOT DESCRIBING**. Focus strictly on **Action and Motion** (e.g., 'The person turns and gestures toward the screen', 'A smooth drone-style push-in'). Do not repeat background details from the image_prompt.
+     - **CRITICAL LIP-SYNC RULE**: This is a voiceover video. Do NOT instruct characters to speak. They must be performing actions, nodding, working, or reacting in a cinematic B-Roll style while the voiceover plays.
+     - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout (e.g., `{{'type':'sequence','children':[{{...}}]}}`). Use premium components ('kinetic_title', 'bento', 'bar_chart', 'lower_third') and correct palette ('HR_Palette', 'Marketing_Palette', etc).
 
 Output ONLY valid JSON:
 {{
   "storyline": "...",
-  "image_prompt": "...",
+  "master_dna": "...",
   "scenes": [
-    {{ "sceneNumber": 1, "description": "Overview of the video", "prompt": "..." }}
+    {{ "sceneNumber": 1, "duration_seconds": 5, "narration": "Welcome to the company...", "description": "Overview", "image_prompt": "[MASTER DNA] A modern corporate office...", "prompt": "A slow cinematic zoom..." }}
   ]
 }}
 
@@ -124,12 +98,13 @@ Output ONLY valid JSON:
     )
 
     system_message_critic = f"""You are the Quality Critic. Review the Prompt Engineer's JSON output.
-- Ensure 'storyline', 'image_prompt', and 'scenes' are all present.
-- Ensure exactly {num_scenes} scenes are provided.
-- Ensure the prompt is formatted correctly for the requested style (Hyper Realistic requires a text command, Infographics REQUIRES a stringified JSON AST in the `prompt` field).
+- Ensure 'storyline', 'master_dna', and 'scenes' are all present.
+- Ensure 'duration_seconds', 'narration', 'image_prompt', and 'prompt' are present in EACH scene.
+- Ensure the sum of 'duration_seconds' across all scenes exactly equals {target_duration}.
+- Ensure exactly {num_scenes} scenes are provided (only if specifically requested, otherwise dynamically allocate scenes).
+- Ensure the prompt is formatted correctly for the requested style (Hyper Realistic requires motion-focused text command, Infographics REQUIRES a stringified JSON AST in the `prompt` field).
 - You MUST reject any prompt that fails to provide a JSON AST string when the style is Infographics.
-- Ensure the prompts are focused on **Motion and Action** and do NOT repeat background descriptions from the image_prompt.
-- Ensure the script length matches the target duration.
+- Ensure the prompts are focused on **Motion and Action**.
 - If perfect, reply ONLY with the exact verbatim JSON. Otherwise, point out errors."""
 
     critic = autogen.AssistantAgent(
@@ -146,22 +121,27 @@ Output ONLY valid JSON:
         is_termination_msg=lambda x: "scenes" in str(x.get("content", "")) and "image_prompt" in str(x.get("content", ""))
     )
 
-    initial_message = f"Please create a comprehensive overview command for the following: {user_prompt}"
-
+    # 4. Define the Group Chat
     groupchat = autogen.GroupChat(
         agents=[user_proxy, director, critic],
         messages=[],
         max_round=10,
-        allow_repeat_speaker=False
+        speaker_selection_method="round_robin",
     )
-    
-    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
-    user_proxy.initiate_chat(manager, message=initial_message)
 
+    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
+
+    # 5. Initiate the Chat
+    user_proxy.initiate_chat(
+        manager,
+        message=f"Please create a comprehensive overview command for the following: \n{user_prompt}"
+    )
+
+    # 6. Extract the Final JSON
     final_data = {
         "storyline": "Standard corporate video.",
-        "image_prompt": f"A professional {style} visual representing {department}.",
-        "scenes": [{"sceneNumber": 1, "description": "Intro", "prompt": f"A corporate scene for {department}."}]
+        "master_dna": f"A professional {style} visual representing {department}.",
+        "scenes": [{"sceneNumber": 1, "duration_seconds": target_duration, "narration": "", "description": "Intro", "image_prompt": f"[MASTER DNA] A corporate scene for {department}.", "prompt": "A slow cinematic zoom."}]
     }
 
     for message in reversed(groupchat.messages):
@@ -180,7 +160,7 @@ Output ONLY valid JSON:
 
     return final_data
 
-def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, storyline: str = "Direct & Formal", avatar: str = None) -> str:
+def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, storyline: str = "Direct & Formal", target_duration: int = 15, avatar: str = None) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
@@ -224,6 +204,10 @@ For each scene, provide:
 
 CRITICAL RULES:
 - ABSOLUTELY DO NOT omit any factual data provided in the concept/prompt. If the user provides specific numbers, policies, or lists, you MUST weave them prominently into the narration and on-screen text.
+- **SCRIPT LENGTH CALIBRATION**: Your script MUST be tailored to a total duration of {target_duration} seconds.
+   - For 16s: ~40-50 words.
+   - For 25s: ~70-80 words.
+   - For 40s: ~110-130 words.
 - Return ONLY the formatted Markdown text. Do NOT include conversational filler like "Here is the script".
 - The output must be directly readable and editable by the user.
 - Ensure the tone matches the {department} department.

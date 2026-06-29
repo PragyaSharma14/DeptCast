@@ -386,7 +386,7 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                         <Clock size={16} className="text-brand"/> Target Duration
                                                     </label>
                                                     <div className="flex gap-4">
-                                                        {[4, 8, 16].map(secs => (
+                                                        {[16, 25, 40].map(secs => (
                                                             <button
                                                                 key={secs}
                                                                 onClick={() => setConfig({...config, duration: secs})}
