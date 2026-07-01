@@ -27,7 +27,11 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
         style: 'Hyper Realistic',
         duration: 4,
         customPrompt: '',
-        avatar: null
+        avatar: null,
+        voiceoverStyle: 'Emotional Human Story',
+        visualVibe: 'Hyper Realistic Cinema',
+        mainCharacterType: 'Founder Hero',
+        audienceEmotion: 'Trust'
     });
     
     const [aiResult, setAiResult] = useState('');
@@ -58,7 +62,11 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 dimension: '16:9',
                 style: 'Hyper Realistic',
                 duration: 15,
-                avatar: null
+                avatar: null,
+                voiceoverStyle: 'Emotional Human Story',
+                visualVibe: 'Hyper Realistic Cinema',
+                mainCharacterType: 'Founder Hero',
+                audienceEmotion: 'Trust'
             }));
             setAiResult('');
         }
@@ -76,7 +84,11 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 style: config.style,
                 dimension: config.dimension,
                 additionalPrompt: config.customPrompt || "Standard generation without additional constraints.",
-                avatar: config.avatar
+                avatar: config.avatar,
+                voiceoverStyle: config.voiceoverStyle,
+                visualVibe: config.visualVibe,
+                mainCharacterType: config.mainCharacterType,
+                audienceEmotion: config.audienceEmotion
             });
             
             if (!result.jobId) throw new Error("Failed to initialize AI Job.");
@@ -132,7 +144,11 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                 targetDuration: parseInt(config.duration),
                 intent: config.template?.title || 'Unknown',
                 additionalPrompt: finalPrompt,
-                referenceImageUrl: config.avatar ? `/avatars/${config.avatar === 'boy' ? 'Alex_Avatar' : 'girl'}.png` : null
+                referenceImageUrl: config.avatar ? `/avatars/${config.avatar === 'boy' ? 'Alex_Avatar' : 'girl'}.png` : null,
+                voiceoverStyle: config.voiceoverStyle,
+                visualVibe: config.visualVibe,
+                mainCharacterType: config.mainCharacterType,
+                audienceEmotion: config.audienceEmotion
             });
             const projectId = projectResult.project?._id || projectResult.project?.id;
 
@@ -422,8 +438,56 @@ export const ProductionModal = ({ isOpen, onClose, selectedDepartment }) => {
                                                         onSelect={(id) => setConfig({...config, avatar: id})} 
                                                     />
                                                 </div>
-
-
+                                                
+                                                {/* Advanced Cinematic Controls */}
+                                                <div className="space-y-6 pt-4 border-t border-slate-100">
+                                                    <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-2">
+                                                        <Sparkles size={16} className="text-brand"/> Advanced Cinematic Controls
+                                                    </h3>
+                                                    
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                        <div className="space-y-2">
+                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Voiceover Style</label>
+                                                            <select 
+                                                                value={config.voiceoverStyle} 
+                                                                onChange={e => setConfig({...config, voiceoverStyle: e.target.value})}
+                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-semibold focus:ring-brand focus:border-brand shadow-inner appearance-none"
+                                                            >
+                                                                {['Goosebumps / Inspirational', 'Founder Vision', 'Emotional Human Story', 'Powerful Cinematic', 'Steve Jobs Style', 'Luxury Brand Style'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Visual Vibe</label>
+                                                            <select 
+                                                                value={config.visualVibe} 
+                                                                onChange={e => setConfig({...config, visualVibe: e.target.value})}
+                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-semibold focus:ring-brand focus:border-brand shadow-inner appearance-none"
+                                                            >
+                                                                {['Hyper Realistic Cinema', 'Hollywood Commercial', 'Luxury Cinematic', 'Futuristic AI World', 'Documentary Style', 'Minimalistic Premium', 'Stylized 3D'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Main Character Type</label>
+                                                            <select 
+                                                                value={config.mainCharacterType} 
+                                                                onChange={e => setConfig({...config, mainCharacterType: e.target.value})}
+                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-semibold focus:ring-brand focus:border-brand shadow-inner appearance-none"
+                                                            >
+                                                                {['Founder Hero', 'Customer Hero', 'Professional Working Adult', 'Team of Professionals', 'Symbolic Character', 'Multiple Characters', 'No Human Faces'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Audience Emotion (Goal)</label>
+                                                            <select 
+                                                                value={config.audienceEmotion} 
+                                                                onChange={e => setConfig({...config, audienceEmotion: e.target.value})}
+                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-semibold focus:ring-brand focus:border-brand shadow-inner appearance-none"
+                                                            >
+                                                                {['Inspired', 'Trust', 'Excitement', 'Hope', 'Ambition', 'Confidence', 'Urgency', 'Pride', 'I Need This Brand'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 {/* Credit Transparency Breakdown */}
                                                 <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">

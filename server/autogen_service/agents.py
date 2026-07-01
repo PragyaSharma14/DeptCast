@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 parent_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(parent_env_path)
 
-def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15, avatar: str = None) -> dict:
+def run_autogen_workflow(department: str, style: str, template: str, dimension: str, user_prompt: str, target_duration: int = 15, avatar: str = None, voiceover_style: str = None, visual_vibe: str = None, main_character_type: str = None, audience_emotion: str = None) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
@@ -60,7 +60,11 @@ Your task is to write a comprehensive overview command that tells the Video AI e
 
 Current Constraints:
 - Department: {department}
-- Visual Style: {style.upper()} ({style_guide})
+- Visual Engine Style: {style.upper()} ({style_guide})
+- Visual Aesthetic/Vibe: {visual_vibe or 'Standard Corporate'}
+- Main Character Type: {main_character_type or 'Default Presenter'}
+- Target Audience Emotion (End state): {audience_emotion or 'Professional & Informed'}
+- Voiceover Style: {voiceover_style or 'Direct & Formal'}
 - Department Tone Guide: {dept_guide}
 - Video Dimension: {dimension}{avatar_hint}
 
@@ -71,9 +75,12 @@ Task:
    For each scene, output:
    - `sceneNumber`: int
    - `duration_seconds`: int (Use whatever integer makes sense for the narration length, e.g., 3, 5, 7. Sum must equal {target_duration}).
+   - `shot_type`: String. Either "A-Roll" or "B-Roll". Choose the most appropriate shot type for the scene's context to create a dynamic and engaging video. Use A-Roll when you want the presenter to speak directly to the audience, and B-Roll for cutaway visuals and demonstrations.
    - `narration`: The exact spoken text for this scene.
    - `description`: User-facing story snippet.
-   - `image_prompt`: A highly creative visual description of the static scene to feed to the image generator. MUST start with your Master DNA string. Get creative! Use cinematic B-Roll concepts (abstract representations, dynamic environments, close-up product shots, text integrations) instead of just "a person standing". If an Avatar is specified, ensure they match the Avatar.
+   - `image_prompt`: A highly creative visual description of the static scene to feed to the image generator. MUST start with your Master DNA string. 
+     - If `shot_type` is "A-Roll": Focus on the avatar/presenter talking or reacting to the camera.
+     - If `shot_type` is "B-Roll": Create cinematic cutaways, 3D abstractions, dynamic environments, or macro-shots (DO NOT include the avatar/presenter).
    - `prompt`: The Video Generation (Veo) Prompt. **DIRECTING, NOT DESCRIBING**. Focus strictly on **Action and Motion** (e.g., 'The person turns and gestures toward the screen', 'A smooth drone-style push-in'). Do not repeat background details from the image_prompt.
      - **CRITICAL LIP-SYNC RULE**: This is a voiceover video. Do NOT instruct characters to speak. They must be performing actions, nodding, working, or reacting in a cinematic B-Roll style while the voiceover plays.
      - IF INFOGRAPHIC: YOU MUST OUTPUT A STRINGIFIED JSON AST in the `prompt` field representing the UI layout (e.g., `{{'type':'sequence','children':[{{...}}]}}`). Use premium components ('kinetic_title', 'bento', 'bar_chart', 'lower_third') and correct palette ('HR_Palette', 'Marketing_Palette', etc).
@@ -83,7 +90,7 @@ Output ONLY valid JSON:
   "storyline": "...",
   "master_dna": "...",
   "scenes": [
-    {{ "sceneNumber": 1, "duration_seconds": 5, "narration": "Welcome to the company...", "description": "Overview", "image_prompt": "[MASTER DNA] A modern corporate office...", "prompt": "A slow cinematic zoom..." }}
+    {{ "sceneNumber": 1, "duration_seconds": 5, "shot_type": "A-Roll", "narration": "Welcome to the company...", "description": "Overview", "image_prompt": "[MASTER DNA] A modern corporate office...", "prompt": "A slow cinematic zoom..." }}
   ]
 }}
 
@@ -99,7 +106,8 @@ Output ONLY valid JSON:
 
     system_message_critic = f"""You are the Quality Critic. Review the Prompt Engineer's JSON output.
 - Ensure 'storyline', 'master_dna', and 'scenes' are all present.
-- Ensure 'duration_seconds', 'narration', 'image_prompt', and 'prompt' are present in EACH scene.
+- Ensure 'duration_seconds', 'shot_type', 'narration', 'image_prompt', and 'prompt' are present in EACH scene.
+- Ensure 'shot_type' is exactly either "A-Roll" or "B-Roll".
 - Ensure the sum of 'duration_seconds' across all scenes exactly equals {target_duration}.
 - Ensure exactly {num_scenes} scenes are provided (only if specifically requested, otherwise dynamically allocate scenes).
 - Ensure the prompt is formatted correctly for the requested style (Hyper Realistic requires motion-focused text command, Infographics REQUIRES a stringified JSON AST in the `prompt` field).
@@ -141,7 +149,7 @@ Output ONLY valid JSON:
     final_data = {
         "storyline": "Standard corporate video.",
         "master_dna": f"A professional {style} visual representing {department}.",
-        "scenes": [{"sceneNumber": 1, "duration_seconds": target_duration, "narration": "", "description": "Intro", "image_prompt": f"[MASTER DNA] A corporate scene for {department}.", "prompt": "A slow cinematic zoom."}]
+        "scenes": [{"sceneNumber": 1, "duration_seconds": target_duration, "shot_type": "A-Roll", "narration": "", "description": "Intro", "image_prompt": f"[MASTER DNA] A corporate scene for {department}.", "prompt": "A slow cinematic zoom."}]
     }
 
     for message in reversed(groupchat.messages):
@@ -160,7 +168,7 @@ Output ONLY valid JSON:
 
     return final_data
 
-def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, storyline: str = "Direct & Formal", target_duration: int = 15, avatar: str = None) -> str:
+def run_autogen_blueprint(department: str, style: str, template: str, dimension: str, user_prompt: str, storyline: str = "Direct & Formal", target_duration: int = 15, avatar: str = None, voiceover_style: str = None, visual_vibe: str = None, main_character_type: str = None, audience_emotion: str = None) -> str:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     if not gemini_api_key:
         raise ValueError("GEMINI_API_KEY is not defined in the environment.")
@@ -190,7 +198,11 @@ Your job is to generate a comprehensive, highly-structured video script formatte
 
 Current Constraints:
 - Department: {department}
-- Visual Style: {dynamic_format}
+- Visual Engine Style: {dynamic_format}
+- Visual Aesthetic/Vibe: {visual_vibe or 'Standard Corporate'}
+- Main Character Type: {main_character_type or 'Default Presenter'}
+- Voiceover Style/Tone: {voiceover_style or 'Direct & Formal'}
+- Target Audience Emotion: {audience_emotion or 'Professional & Informed'}
 - Narrative Storyline to Follow: {storyline}
 {f"- Avatar: Use the provided avatar strictly as a character design reference." if avatar else ""}
 

@@ -2,7 +2,7 @@ import prisma from '../db.js';
 
 export const generateBlueprint = async (req, res) => {
     try {
-        const { department, templateId, style, additionalPrompt, avatar } = req.body;
+        const { department, templateId, style, additionalPrompt, avatar, voiceoverStyle, visualVibe, mainCharacterType, audienceEmotion } = req.body;
 
         let templateSystemPrompt = "Standard generation";
         if (templateId) {
@@ -32,7 +32,11 @@ export const generateBlueprint = async (req, res) => {
                 style: style || 'Cinematic',
                 template: templateSystemPrompt,
                 dimension: '16:9',
-                avatar: avatar || null
+                avatar: avatar || null,
+                voiceoverStyle: voiceoverStyle || null,
+                visualVibe: visualVibe || null,
+                mainCharacterType: mainCharacterType || null,
+                audienceEmotion: audienceEmotion || null
             })
         }).catch(err => {
             console.error(`[AI SERVICE] Network Error:`, err.message);
@@ -55,7 +59,11 @@ export const generateBlueprint = async (req, res) => {
                     style: style || 'Cinematic',
                     template: templateSystemPrompt,
                     dimension: '16:9',
-                    avatar: avatar || null
+                    avatar: avatar || null,
+                    voiceoverStyle: voiceoverStyle || null,
+                    visualVibe: visualVibe || null,
+                    mainCharacterType: mainCharacterType || null,
+                    audienceEmotion: audienceEmotion || null
                 })
             }).catch(err => { throw new Error(`AI Service unreachable after retry.`); });
         }
@@ -111,7 +119,7 @@ export const checkBlueprintStatus = async (req, res) => {
 
 export const createProject = async (req, res) => {
     try {
-        const { additionalPrompt, department, templateId, style, dimension, targetDuration, referenceImageUrl } = req.body;
+        const { additionalPrompt, department, templateId, style, dimension, targetDuration, referenceImageUrl, voiceoverStyle, visualVibe, mainCharacterType, audienceEmotion } = req.body;
 
         // Retrieve Template from DB
         let templateSystemPrompt = "Standard generation";
@@ -135,7 +143,11 @@ export const createProject = async (req, res) => {
                 dimension: dimension,
                 targetDuration: targetDuration || 8,
                 referenceImageUrl: referenceImageUrl || null,
-                status: 'draft'
+                status: 'draft',
+                voice: voiceoverStyle || null,
+                visualVibe: visualVibe || null,
+                characterType: mainCharacterType || null,
+                emotion: audienceEmotion || null
             }
         });
 

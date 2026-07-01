@@ -109,7 +109,11 @@ export const generateVideo = async (req, res) => {
                             template: (template && template.title) ? template.title : "Standard generation",
                             dimension: project.dimension || '16:9',
                             targetDuration: project.targetDuration || 16,
-                            avatar: project.avatar || null
+                            avatar: project.avatar || null,
+                            voiceoverStyle: project.voice || null,
+                            visualVibe: project.visualVibe || null,
+                            mainCharacterType: project.characterType || null,
+                            audienceEmotion: project.emotion || null
                         })
                     });
                     
@@ -152,18 +156,33 @@ export const generateVideo = async (req, res) => {
                     console.log(`[Google Veo] Starting progressive generation for ${jsonScenes.length} scenes...`);
 
                     const stitchedClips = [];
+                    let masterImageUrl = project.referenceImageUrl; // Fallback master image
 
                     for (let i = 0; i < jsonScenes.length; i++) {
                         const sceneData = jsonScenes[i];
                         const duration = sceneData.duration_seconds || 8;
-                        console.log(`\n--- Processing Scene ${i + 1} (${duration}s) ---`);
+                        const shotType = sceneData.shot_type || "A-Roll";
+                        const isARoll = shotType === "A-Roll";
+                        
+                        console.log(`\n--- Processing Scene ${i + 1} (${duration}s) [${shotType}] ---`);
                         
                         try {
                             // 1. Generate Image (Imagen)
-                            let imageUrl = project.referenceImageUrl; // fallback to base if no scene prompt
-                            if (sceneData.image_prompt) {
-                                console.log(`[Imagen] Generating reference image for scene ${i + 1}...`);
-                                imageUrl = await generateImageAsync(sceneData.image_prompt, project.dimension || "16:9", project.avatar);
+                            let imageUrl = masterImageUrl;
+                            
+                            if (isARoll) {
+                                if (!masterImageUrl && sceneData.image_prompt) {
+                                    console.log(`[Imagen] Generating MASTER reference image for A-Roll...`);
+                                    masterImageUrl = await generateImageAsync(sceneData.image_prompt, project.dimension || "16:9", project.avatar);
+                                    imageUrl = masterImageUrl;
+                                } else {
+                                    console.log(`[Imagen] Reusing MASTER reference image for A-Roll scene ${i + 1}...`);
+                                }
+                            } else {
+                                if (sceneData.image_prompt) {
+                                    console.log(`[Imagen] Generating B-Roll reference image for scene ${i + 1}...`);
+                                    imageUrl = await generateImageAsync(sceneData.image_prompt, project.dimension || "16:9", project.avatar);
+                                }
                             }
 
                             // 2. Generate Video (Veo)
@@ -187,7 +206,7 @@ export const generateVideo = async (req, res) => {
                             if (scenes[i]) {
                                 await prisma.scene.update({
                                     where: { id: scenes[i].id },
-                                    data: { status: 'completed', description: sceneData.description || 'Done' }
+                                    data: { status: 'completed', description: sceneData.description || 'Done', shotType: sceneData.shot_type || 'A-Roll' }
                                 });
                             }
 

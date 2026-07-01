@@ -72,6 +72,9 @@ model Project {
   style          String
   avatar         String?
   voice          String?
+  visualVibe     String?
+  characterType  String?
+  emotion        String?
   dimension      String?
   targetDuration Int          @default(8)
   status         String       @default("draft")
@@ -141,6 +144,7 @@ model Scene {
   description String   @db.Text
   prompt      String   @db.Text
   status      String   @default("pending")
+  shotType    String   @default("A-Roll")
   createdAt   DateTime @default(now())
 }
 

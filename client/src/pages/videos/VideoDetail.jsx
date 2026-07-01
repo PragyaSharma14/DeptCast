@@ -184,6 +184,45 @@ export const VideoDetail = () => {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Scenes Overview */}
+                    {scenes && scenes.length > 0 && (
+                        <Card className="border border-slate-200 shadow-sm rounded-2xl overflow-hidden mt-8">
+                            <CardContent className="p-6 bg-white">
+                                <h3 className="text-lg font-heading font-bold text-slate-900 mb-4">Scenes Overview</h3>
+                                <div className="space-y-4">
+                                    {scenes.map((scene) => (
+                                        <div key={scene.id} className="flex flex-col md:flex-row gap-4 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                            <div className="flex flex-col items-start gap-2 md:w-1/4">
+                                                <span className="font-bold text-slate-700">Scene {scene.sceneNumber}</span>
+                                                <div className="flex gap-2">
+                                                    <span className={cn(
+                                                        "text-xs px-2 py-1 rounded-md font-semibold uppercase tracking-wider",
+                                                        scene.shotType === "A-Roll" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
+                                                    )}>
+                                                        {scene.shotType || "A-Roll"}
+                                                    </span>
+                                                    <span className={cn(
+                                                        "text-xs px-2 py-1 rounded-md font-semibold uppercase tracking-wider",
+                                                        scene.status === 'completed' ? "bg-green-100 text-green-700" :
+                                                        scene.status === 'generating' ? "bg-yellow-100 text-yellow-700" :
+                                                        scene.status === 'failed' ? "bg-red-100 text-red-700" :
+                                                        "bg-slate-200 text-slate-700"
+                                                    )}>
+                                                        {scene.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-slate-900 mb-1">{scene.description}</p>
+                                                <p className="text-xs text-slate-500 line-clamp-2">{scene.prompt}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
             </div>

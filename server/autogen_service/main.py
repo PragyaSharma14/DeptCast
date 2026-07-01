@@ -25,6 +25,10 @@ class VideoGenerationRequest(BaseModel):
     storyline: str = "Direct & Formal"
     targetDuration: Optional[int] = 15
     avatar: Optional[str] = None
+    voiceoverStyle: Optional[str] = None
+    visualVibe: Optional[str] = None
+    mainCharacterType: Optional[str] = None
+    audienceEmotion: Optional[str] = None
 
 
 
@@ -48,7 +52,11 @@ async def generate_script(req: VideoGenerationRequest):
             user_prompt=req.prompt,
             storyline=req.storyline,
             target_duration=req.targetDuration,
-            avatar=req.avatar
+            avatar=req.avatar,
+            voiceover_style=req.voiceoverStyle,
+            visual_vibe=req.visualVibe,
+            main_character_type=req.mainCharacterType,
+            audience_emotion=req.audienceEmotion
         )
         return {"status": "success", **result}
     except Exception as e:
@@ -70,7 +78,11 @@ def run_blueprint_task(job_id: str, req: VideoGenerationRequest):
             dimension=req.dimension,
             user_prompt=req.prompt,
             storyline=req.storyline,
-            avatar=req.avatar
+            avatar=req.avatar,
+            voiceover_style=req.voiceoverStyle,
+            visual_vibe=req.visualVibe,
+            main_character_type=req.mainCharacterType,
+            audience_emotion=req.audienceEmotion
         )
         JOBS[job_id]["status"] = "completed"
         JOBS[job_id]["result"] = blueprint
