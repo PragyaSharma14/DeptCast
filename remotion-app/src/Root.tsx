@@ -1,61 +1,60 @@
 import React from "react";
 import { Composition } from "remotion";
 import { DynamicComposition } from "./DynamicComposition";
+import { PASLayoutAST } from "./layouts/PASLayoutAST";
+import { DirectFormalLayoutAST } from "./layouts/DirectFormalLayoutAST";
 
-// A fallback dummy AST
-const defaultProps = {
-  durationInFrames: 300, // 10 seconds at 30 fps
-  ast: {
-    type: "sequence",
-    children: [
-      {
-        type: "scene",
-        durationInFrames: 150,
-        layout: {
-          type: "center",
-          backgroundColor: "#111111",
-          children: [
-            { type: "text", text: "Generative UI in Remotion", color: "#ffffff", fontSize: "80px", animation: "fade-in" }
-          ]
-        }
-      },
-      {
-        type: "scene",
-        durationInFrames: 150,
-        layout: {
-          type: "split",
-          backgroundColor: "#222222",
-          left: { type: "text", text: "Data Visualization", color: "#60a5fa", fontSize: "60px" },
-          right: { type: "chart", data: [10, 20, 30, 40] }
-        }
-      }
-    ]
+const calculateMetadata = ({ props }: { props: { ast: any } }) => {
+  let totalDuration = 0;
+  if (props.ast && props.ast.children) {
+    for (const child of props.ast.children) {
+      totalDuration += (child.durationInFrames || 90);
+    }
   }
+  return {
+    durationInFrames: totalDuration > 0 ? totalDuration : 300,
+    props
+  };
 };
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        id="DynamicVideo"
+        id="Preview-PAS-Futuristic-Urgency"
         component={DynamicComposition}
-        calculateMetadata={({ props }) => {
-          let totalDuration = 0;
-          if (props.ast && props.ast.children) {
-            for (const child of props.ast.children) {
-              totalDuration += (child.durationInFrames || 90);
-            }
-          }
-          return {
-            durationInFrames: totalDuration > 0 ? totalDuration : 300,
-            props
-          };
-        }}
-        durationInFrames={300}
+        calculateMetadata={calculateMetadata}
         fps={30}
         width={1920}
         height={1080}
-        defaultProps={defaultProps}
+        defaultProps={{ ast: PASLayoutAST("Futuristic AI World", "Urgency", "girl") }}
+      />
+      <Composition
+        id="Preview-PAS-Minimalist-Trust"
+        component={DynamicComposition}
+        calculateMetadata={calculateMetadata}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ ast: PASLayoutAST("Minimalistic Premium", "Trust", "boy") }}
+      />
+      <Composition
+        id="Preview-DirectFormal-Luxury"
+        component={DynamicComposition}
+        calculateMetadata={calculateMetadata}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ ast: DirectFormalLayoutAST("Luxury Cinematic", "Pride", "girl") }}
+      />
+      <Composition
+        id="Preview-DirectFormal-Hollywood"
+        component={DynamicComposition}
+        calculateMetadata={calculateMetadata}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ ast: DirectFormalLayoutAST("Hollywood Commercial", "Excitement", "boy") }}
       />
     </>
   );
